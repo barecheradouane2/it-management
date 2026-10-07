@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DeviceType {
+  UNITE
+  ECRAN
+  ONDULEUR
+  IMPRIMANTE
+  LAPTOP
+  DATASHOW
+}
+
+enum DeviceCondition {
+  NEUF
+  EN_PANNE
+  ANCIEN
+}
+
+enum DeviceState {
+  BUREAU_IT
+  TRANSFER
+  MAGASIN
+  ARCHIVES
+}
+
+enum AssignmentCondition {
+  NEUF
+  EN_PANNE
+  ANCIEN
+}
+
+enum Block {
+  BLOCK_SDR
+  BLOCK_DR
+  SPACE_R
+  SPACE_P
+  BASE_DE_VIE
+}
+
+enum Service {
+  RH
+  BET
+  IT
+  QAQC
+  SMI
+  COMPTABLE
+  FINANCE
+  CND
+  COST
+  ENGINEERING
+  GDS
+  TOPO
+  PLANNING
+  HSE
+  LOGISTIC
+  ARCHIVES
+  CONSTRUCTION
+  DCC
+  SAS
+  OTHER
+}
+
+model Employee {
+  id       Int      @id @default(autoincrement())
+  fullname String
+  function String?
+  email    String?  @unique
+  phone    String?
+  service  Service?
+
+  assignments Assignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Device {
+  id           Int             @id @default(autoincrement())
+  codeSarpi    String          @unique
+  serialNumber String?         @unique
+  type         DeviceType
+  brand        String
+  model        String?
+  arrivalDate  DateTime?
+  siteProject  String?
+  condition    DeviceCondition @default(NEUF)
+  state        DeviceState     @default(BUREAU_IT)
+  note         String?
+
+  assignments   Assignment[]
+  transferItems TransferItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Assignment {
+  id Int @id @default(autoincrement())
+
+  deviceId   Int
+  employeeId Int
+
+  bureau    String?
+  block     Block?
+  hostName  String?
+  condition AssignmentCondition @default(NEUF)
+  note      String?
+
+  assignedAt DateTime  @default(now())
+  returnedAt DateTime?
+
+  device   Device   @relation(fields: [deviceId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deviceId])
+  @@index([employeeId])
+  @@index([bureau])
+  @@index([block])
+}
+
+enum MaterialNature {
+  INVESTISSEMENT
+  CONSOMMABLE
+}
+
+model Transfer {
+  id Int @id @default(autoincrement())
+
+  siteExpediteur String
+  dateExpediteur DateTime
+
+  siteDestinataire String
+  dateDestinataire DateTime?
+
+  nature MaterialNature
+
+  note String?
+
+  items TransferItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([siteExpediteur])
+  @@index([siteDestinataire])
+  @@index([dateExpediteur])
+}
+
+model TransferItem {
+  id         Int @id @default(autoincrement())
+  transferId Int
+  deviceId   Int
+  quantity   Int @default(1)
+
+  transfer Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  device   Device   @relation(fields: [deviceId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([transferId, deviceId])
+  @@index([transferId])
+  @@index([deviceId])
+}
