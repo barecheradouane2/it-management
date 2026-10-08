@@ -128,3 +128,35 @@ return {
 
 }
 }
+
+
+export async function getAllDevicesForTransfer() {
+  try {
+    const devices = await prisma.device.findMany({
+      select: {
+        id: true,
+        codeSarpi: true,
+        serialNumber: true,
+        type: true,
+        brand: true,
+        model: true,
+      },
+      orderBy: {
+        codeSarpi: "asc",
+      },
+    });
+
+    return {
+      success: true,
+      devices,
+    };
+  } catch (error) {
+    console.error("getAllDevicesForTransfer:", error);
+
+    return {
+      success: false,
+      devices: [],
+      error: "Impossible de charger les matériels.",
+    };
+  }
+}

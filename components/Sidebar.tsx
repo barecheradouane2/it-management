@@ -33,7 +33,12 @@ const navigation = [
     name: "Assignments",
     href: "/assignments",
     icon: ClipboardList,
-  },
+  },,
+  {
+    name: "Transfer",
+    href: "/Transfer",
+    icon: ClipboardList,
+  }
 ];
 
 export default function Sidebar() {

@@ -20,6 +20,17 @@ type Employee = {
   service?: string | null;
 };
 
+const deviceTypes = [
+  "UNITE",
+  "ECRAN",
+  "ONDULEUR",
+  "IMPRIMANTE",
+  "LAPTOP",
+  "DATASHOW",
+];
+
+
+
 
 
 type Props = {
