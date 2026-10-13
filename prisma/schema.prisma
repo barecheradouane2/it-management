@@ -13,6 +13,9 @@ enum DeviceType {
   IMPRIMANTE
   LAPTOP
   DATASHOW
+  Switch
+  Hard_Disk
+  Flash_Disk
 }
 
 enum DeviceCondition {
@@ -22,10 +25,10 @@ enum DeviceCondition {
 }
 
 enum DeviceState {
-  BUREAU_IT
-  TRANSFER
-  MAGASIN
-  ARCHIVES
+  en_Service
+  Transfert 
+  en_Stock
+  
 }
 
 enum AssignmentCondition {
@@ -81,7 +84,7 @@ model Employee {
 
 model Device {
   id           Int             @id @default(autoincrement())
-  codeSarpi    String          @unique
+  codeSarpi String? @unique
   serialNumber String?         @unique
   type         DeviceType
   brand        String
@@ -89,8 +92,9 @@ model Device {
   arrivalDate  DateTime?
   siteProject  String?
   condition    DeviceCondition @default(NEUF)
-  state        DeviceState     @default(BUREAU_IT)
+  state        DeviceState     @default(en_Stock)
   note         String?
+   qty          Int             @default(1)   
 
   assignments   Assignment[]
   transferItems TransferItem[]

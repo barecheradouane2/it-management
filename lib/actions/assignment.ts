@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import {
 AssignmentCondition,
 Block,
+DeviceState 
 } from "@prisma/client";
 
 export type AssignmentFormData = {
@@ -20,48 +21,96 @@ returnedAt: string;
 };
 
 // CREATE
+// Keep your existing AssignmentFormData type definition.
+
 export async function createAssignment(data: AssignmentFormData) {
-try {
-const assignment = await prisma.assignment.create({
-data: {
-deviceId: data.deviceId,
-employeeId: data.employeeId,
-bureau: data.bureau || null,
-block: data.block || null,
-hostName: data.hostName || null,
-condition: data.condition || AssignmentCondition.NEUF,
-note: data.note || null,
-assignedAt: data.assignedAt
-? new Date(data.assignedAt)
-: new Date(),
-returnedAt: data.returnedAt
-? new Date(data.returnedAt)
-: null,
-},
-});
+  try {
+    const assignment = await prisma.$transaction(async (tx) => {
+      // 1. Verify that the device exists
+      const device = await tx.device.findUnique({
+        where: {
+          id: data.deviceId,
+        },
+        select: {
+          id: true,
+          state: true,
+        },
+      });
 
+      if (!device) {
+        throw new Error("DEVICE_NOT_FOUND");
+      }
 
-revalidatePath("/assignments");
-revalidatePath("/devices");
-revalidatePath("/employees");
+      // 2. Allow assignment only if the device is in stock
+      if (device.state !== DeviceState.en_Stock) {
+        throw new Error("DEVICE_NOT_IN_STOCK");
+      }
 
-return {
-  success: true,
-  assignment,
-};
+      // 3. Create the assignment
+      const newAssignment = await tx.assignment.create({
+        data: {
+          deviceId: data.deviceId,
+          employeeId: data.employeeId,
+          bureau: data.bureau || null,
+          block: data.block || null,
+          hostName: data.hostName || null,
+          condition: data.condition || AssignmentCondition.NEUF,
+          note: data.note || null,
+          assignedAt: data.assignedAt
+            ? new Date(data.assignedAt)
+            : new Date(),
+          returnedAt: data.returnedAt
+            ? new Date(data.returnedAt)
+            : null,
+        },
+      });
 
+      // 4. Change the device state to en_Service
+      await tx.device.update({
+        where: {
+          id: data.deviceId,
+        },
+        data: {
+          state: DeviceState.en_Service,
+        },
+      });
 
-} catch (error) {
-console.error("Error creating assignment:", error);
+      return newAssignment;
+    });
 
+    // 5. Refresh the affected pages
+    revalidatePath("/assignments");
+    revalidatePath("/devices");
+    revalidatePath("/employees");
 
-return {
-  success: false,
-  error: "Failed to create assignment",
-};
+    return {
+      success: true,
+      assignment,
+    };
+  } catch (error) {
+    console.error("Error creating assignment:", error);
 
+    if (error instanceof Error) {
+      if (error.message === "DEVICE_NOT_FOUND") {
+        return {
+          success: false,
+          error: "Device not found.",
+        };
+      }
 
-}
+      if (error.message === "DEVICE_NOT_IN_STOCK") {
+        return {
+          success: false,
+          error: "Assignment not allowed: the device is not in stock.",
+        };
+      }
+    }
+
+    return {
+      success: false,
+      error: "Failed to create assignment.",
+    };
+  }
 }
 
 // UPDATE

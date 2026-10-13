@@ -66,44 +66,46 @@ export default async function EmployeesPage({
     : {};
 
     const columns = [
-  { header: "ID", accessor: "id" },
-  { header: "Fullname", accessor: "fullname" },
-  { header: "Function", accessor: "function" },
-  { header: "Service", accessor: "service" },
-  { header: "Email", accessor: "email" },
-  { header: "Phone", accessor: "phone" },
-  { header: "Action", accessor: "action" },
+  { header: "ID", accessor: "id" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+  { header: "Fullname", accessor: "fullname" ,className: "px-6  text-left  border-b-1 border-black " },
+  { header: "Function", accessor: "function" ,className: "px-6  text-left   border-b-1 border-black" },
+  { header: "Service", accessor: "service" ,className: "px-6  text-left  border-b-1 border-black " },
+  { header: "Email", accessor: "email" ,className: "px-6 text-left  border-b-1 border-black " },
+  { header: "Phone", accessor: "phone" ,className: "px-6  text-left   border-b-1 border-black" },
+  { header: "Action", accessor: "action" ,className: "px-6  text-left  border-b-1 border-black  " },
      ];
 
-     const renderRow = (employee: (typeof employees)[number]) => (
+const renderRow = (employee: (typeof employees)[number]) => {
+  const index = employees.findIndex((e) => e.id === employee.id);
+
+  return (
     <tr
       key={employee.id}
-    className="border-b border-gray-200 text-sm hover:bg-slate-50"
+      className="border-b border-gray-200 text-sm hover:bg-slate-50"
     >
-    <td className="px-6 py-4">{employee.id}</td>
-    <td className="px-6 py-4 font-medium">{employee.fullname}</td>
-    <td className="px-6 py-4">{employee.function || "-"}</td>
-    <td className="px-6 py-4">{employee.service || "-"}</td>
-    <td className="px-6 py-4">{employee.email || "-"}</td>
-    <td className="px-6 py-4">{employee.phone || "-"}</td>
+      <td className="px-6 py-4">{index + 1}</td>
+      <td className="px-6 py-4 font-medium">{employee.fullname}</td>
+      <td className="px-6 py-4">{employee.function || "-"}</td>
+      <td className="px-6 py-4">{employee.service || "-"}</td>
+      <td className="px-6 py-4">{employee.email || "-"}</td>
+      <td className="px-6 py-4">{employee.phone || "-"}</td>
 
-    <td className="px-6 py-4">
-      <div className="flex items-center gap-3">
-        <AddEditEmployeeModal employee={employee} />
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <AddEditEmployeeModal employee={employee} />
 
-        <DeleteButton
-           id={employee.id}
+          <DeleteButton
+            id={employee.id}
             itemName="employee"
-           deleteAction={deleteEmployee}
-        />
+            deleteAction={deleteEmployee}
+          />
 
-        <PrintEmployeeButton employeeId={employee.id} />
-
-        
-      </div>
-    </td>
-  </tr>
-);
+          <PrintEmployeeButton employeeId={employee.id} />
+        </div>
+      </td>
+    </tr>
+  );
+};
 
 
 

@@ -103,6 +103,9 @@ mode: "insensitive" as const,
 
 const [devices, employees] = await Promise.all([
   prisma.device.findMany({
+     where: {
+      state: "en_Stock",
+    },
     select: {
       id: true,
       codeSarpi: true,
@@ -146,27 +149,32 @@ prisma.assignment.count({ where }),
 ]);
 
 const columns = [
-{ header: "ID", accessor: "id" },
-{ header: "Device Code", accessor: "device" },
-{ header: "Employee", accessor: "employee" },
-{ header: "Bureau", accessor: "bureau" },
-{ header: "Block", accessor: "block" },
-{ header: "Hostname", accessor: "hostName" },
-{ header: "Condition", accessor: "condition" },
-{ header: "Assigned At", accessor: "assignedAt" },
-{ header: "Returned At", accessor: "returnedAt" },
-{ header: "Status", accessor: "status" },
-{ header: "Action", accessor: "action" },
+{ header: "ID", accessor: "id" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Device Code", accessor: "device" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Employee", accessor: "employee" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Bureau", accessor: "bureau" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Block", accessor: "block" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Hostname", accessor: "hostName" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Condition", accessor: "condition" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Assigned At", accessor: "assignedAt" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Returned At", accessor: "returnedAt" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Status", accessor: "status" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Action", accessor: "action" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
 ];
 
 const renderRow = (
 assignment: (typeof assignments)[number]
-) => ( <tr
+) => {
+
+    const index = assignments.findIndex((d) => d.id === assignment.id);
+  
+  return ( <tr
    key={assignment.id}
    className="border-b border-gray-200 text-sm hover:bg-slate-50"
- > <td className="px-5 py-4">{assignment.id}</td>
+ > 
+ <td className="px-5 py-4">{index + 1}</td>
 
-```
+
   <td className="px-5 py-4 font-medium">
     {assignment.device.codeSarpi}
     <div className="text-xs text-slate-500">
@@ -236,7 +244,7 @@ assignment: (typeof assignments)[number]
 </tr>
 
 
-);
+); };
 
 return ( <main className="min-h-screen bg-slate-50 p-8"> <div className="mx-auto max-w-8xl"> <div> <h1 className="text-3xl font-bold">Assignments</h1>
 

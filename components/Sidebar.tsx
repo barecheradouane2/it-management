@@ -12,7 +12,7 @@ import {
   X,
   Settings,
   Van,
-  Cable 
+  FileText 
 } from "lucide-react";
 
 const navigation = [
@@ -42,9 +42,9 @@ const navigation = [
     icon: Van,
   },
   {
-    name:"supplyrequest",
+    name:" DFL",
     href:"/supplyrequest",
-    icon:"Cable"
+    icon:FileText
   }
 ];
 

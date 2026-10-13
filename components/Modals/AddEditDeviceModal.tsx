@@ -37,16 +37,18 @@ const deviceTypes = [
 "IMPRIMANTE",
 "LAPTOP",
 "DATASHOW",
+"Switch",
+"Hard_Disk",
+"Flash_Disk"
 ] as const;
 
 const conditions = ["NEUF", "EN_PANNE", "ANCIEN"] as const;
 
 // Ensure these values match your Prisma DeviceState enum.
 const states = [
-"BUREAU_IT",
-"TRANSFER",
-"MAGASIN",
-"ARCHIVES",
+"en_Service",
+"Transfert",
+"en_Stock"
 ] as const;
 
 export default function AddEditDeviceModal({
@@ -176,7 +178,6 @@ return (
 + Add Device </button>
 )}
 
-```
   {open && (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl">

@@ -8,7 +8,7 @@ export default async function DashboardPage() {
       devices,
       assignments,
       brokenDevices,
-      archivedDevices,
+    
     ] = await Promise.all([
       prisma.employee.count(),
       prisma.device.count(),
@@ -21,12 +21,7 @@ export default async function DashboardPage() {
         where: {
           condition: "EN_PANNE",
         },
-      }),
-      prisma.device.count({
-        where: {
-          state: "ARCHIVES",
-        },
-      }),
+      })
     ]);
   
     const cards = [
@@ -45,11 +40,7 @@ export default async function DashboardPage() {
       {
         title: "Broken Devices",
         value: brokenDevices,
-      },
-      {
-        title: "Archived",
-        value: archivedDevices,
-      },
+      }
     ];
  
 
