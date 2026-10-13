@@ -11,6 +11,8 @@ import {
   Menu,
   X,
   Settings,
+  Van,
+  Cable 
 } from "lucide-react";
 
 const navigation = [
@@ -33,11 +35,16 @@ const navigation = [
     name: "Assignments",
     href: "/assignments",
     icon: ClipboardList,
-  },,
+  },
   {
     name: "Transfer",
     href: "/Transfer",
-    icon: ClipboardList,
+    icon: Van,
+  },
+  {
+    name:"supplyrequest",
+    href:"/supplyrequest",
+    icon:"Cable"
   }
 ];
 

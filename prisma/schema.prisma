@@ -170,3 +170,50 @@ model TransferItem {
   @@index([transferId])
   @@index([deviceId])
 }
+
+enum SupplyRequestStatus {
+  BROUILLON
+  EN_ATTENTE
+  APPROUVEE
+  PARTIELLEMENT_APPROUVEE
+  REJETEE
+  LIVREE
+}
+
+model SupplyRequest {
+  id            Int                 @id @default(autoincrement())
+  requestNumber String              @unique
+  purpose       String
+  requestDate   DateTime            @default(now())
+  desiredDeadline DateTime?
+  status        SupplyRequestStatus @default(BROUILLON)
+  note          String?
+
+  items SupplyRequestItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requestDate])
+  @@index([status])
+}
+
+model SupplyRequestItem {
+  id                  Int      @id @default(autoincrement())
+  supplyRequestId     Int
+  designation         String
+  referenceCode       String?
+  unit                String
+  requestedQuantity   Int
+  approvedQuantity    Int?
+  desiredAvailability DateTime?
+  note                String?
+
+  supplyRequest SupplyRequest @relation(fields: [supplyRequestId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([supplyRequestId])
+  @@index([designation])
+}
