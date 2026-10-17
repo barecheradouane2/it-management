@@ -16,7 +16,7 @@ import type { Block, AssignmentCondition } from "@prisma/client";
 
 type DeviceOption = {
   id: number;
-  codeSarpi: string;
+  codeSarpi: string | null;
   brand: string;
   model: string | null;
 };

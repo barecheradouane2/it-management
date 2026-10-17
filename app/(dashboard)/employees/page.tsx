@@ -66,7 +66,7 @@ export default async function EmployeesPage({
     : {};
 
     const columns = [
-  { header: "ID", accessor: "id" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+
   { header: "Fullname", accessor: "fullname" ,className: "px-6  text-left  border-b-1 border-black " },
   { header: "Function", accessor: "function" ,className: "px-6  text-left   border-b-1 border-black" },
   { header: "Service", accessor: "service" ,className: "px-6  text-left  border-b-1 border-black " },
@@ -75,8 +75,8 @@ export default async function EmployeesPage({
   { header: "Action", accessor: "action" ,className: "px-6  text-left  border-b-1 border-black  " },
      ];
 
-const renderRow = (employee: (typeof employees)[number]) => {
-  const index = employees.findIndex((e) => e.id === employee.id);
+const renderRow = (employee: (typeof employees)[number],index: number) => {
+  
 
   return (
     <tr

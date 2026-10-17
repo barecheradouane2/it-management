@@ -103,9 +103,7 @@ mode: "insensitive" as const,
 
 const [devices, employees] = await Promise.all([
   prisma.device.findMany({
-     where: {
-      state: "en_Stock",
-    },
+    
     select: {
       id: true,
       codeSarpi: true,
@@ -149,7 +147,7 @@ prisma.assignment.count({ where }),
 ]);
 
 const columns = [
-{ header: "ID", accessor: "id" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+
 { header: "Device Code", accessor: "device" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
 { header: "Employee", accessor: "employee" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
 { header: "Bureau", accessor: "bureau" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
@@ -178,8 +176,9 @@ assignment: (typeof assignments)[number]
   <td className="px-5 py-4 font-medium">
     {assignment.device.codeSarpi}
     <div className="text-xs text-slate-500">
-      {assignment.device.brand}{" "}
-      {assignment.device.model ?? ""}
+      {assignment.device.type ?? " "}{" "}
+      {assignment.device.brand}
+      
     </div>
   </td>
 

@@ -160,7 +160,140 @@ export async function GET(
 
       const isLastPage = pageNumber === totalPages;
 
-      // =======================================================
+      // =========================================================
+    // DRAW HEADER
+    // =========================================================
+
+    const drawHeader = (
+      page: any,
+      pageNumber: number,
+      totalPages: number
+    ) => {
+      const width = pageWidth;
+      const height = pageHeight;
+
+      // Header: approximately 5 points from the top
+      
+
+      const headerX = 40;
+     const headerY = height - 110;
+     const headerWidth = width - 80;
+    const headerHeight = 90;
+
+      // Outer border
+      page.drawRectangle({
+        x: headerX,
+        y: headerY,
+        width: headerWidth,
+        height: headerHeight,
+        borderWidth: 0.5,
+        borderColor: rgb(0, 0, 0),
+      });
+
+      // Vertical separator after logo
+      page.drawLine({
+        start: { x: 140, y: headerY },
+        end: {
+          x: 140,
+          y: headerY + headerHeight,
+        },
+        thickness: 1,
+        color: rgb(0, 0, 0),
+      });
+
+      // Vertical separator before document reference
+      page.drawLine({
+        start: { x: width - 160, y: headerY },
+        end: {
+          x: width - 160,
+          y: headerY + headerHeight,
+        },
+        thickness: 1,
+        color: rgb(0, 0, 0),
+      });
+
+      // Logo
+      page.drawImage(logoImage, {
+        x: 55,
+        y: height - 97,
+        width: 70,
+        height: 70,
+      });
+
+      // Title
+      page.drawText("LETTRE DE DECHARGE", {
+        x: 185,
+        y: height - 70,
+        size: 16,
+        font: boldFont,
+      });
+
+      // Document reference
+      const documentX = width - 150;
+
+      page.drawText("MOD-SMI-PS3-01", {
+        x: documentX,
+        y: height - 40,
+        size: 11,
+        font: boldFont,
+      });
+
+      // Revision
+      page.drawText("Rev", {
+        x: documentX + 22,
+        y: height - 55,
+        size: 11,
+        font: boldFont,
+      });
+
+      page.drawText(" : 01", {
+        x: documentX + 43,
+        y: height - 55,
+        size: 11,
+        font,
+      });
+
+      // Document date
+      page.drawText("Du: 29/01/2020", {
+        x: documentX + 6,
+        y: height - 75,
+        size: 11,
+        font,
+      });
+
+      // Separator
+      const pageSeparatorY = height - 90;
+
+      page.drawLine({
+        start: {
+          x: documentX - 10,
+          y: pageSeparatorY,
+        },
+        end: {
+          x: documentX + 110,
+          y: pageSeparatorY,
+        },
+        thickness: 1,
+        color: rgb(0, 0, 0),
+      });
+
+      // Dynamic page number
+      const pageText = `Page ${pageNumber} sur ${totalPages}`;
+      const pageFontSize = 9;
+
+      const pageTextWidth = boldFont.widthOfTextAtSize(
+        pageText,
+        pageFontSize
+      );
+
+      page.drawText(pageText, {
+        x: documentX + (100 - pageTextWidth) / 2,
+        y: height - 103,
+        size: pageFontSize,
+        font: boldFont,
+      });
+    };
+
       // HEADER BOX
       // =======================================================
 
@@ -168,6 +301,8 @@ export async function GET(
       const headerY = pageHeight - 110;
       const headerWidth = pageWidth - 80;
       const headerHeight = 75;
+
+      
 
       page.drawRectangle({
         x: headerX,
@@ -232,23 +367,30 @@ export async function GET(
         font: boldFont,
       });
 
-      page.drawText("Rev : 00", {
+      page.drawText("         Rev : 00        ", {
         x: docX,
         y: headerY + 40,
         size: 9,
         font,
       });
 
-      page.drawText("Du: 21/05/2025", {
+      page.drawText("    Du: 21/05/2025    ", {
         x: docX,
         y: headerY + 25,
         size: 9,
         font,
       });
 
-      page.drawText(`Page ${pageNumber} sur ${totalPages}`, {
+      page.drawLine({
+  start: { x: docX -10, y: headerY + 20 },
+  end: { x: docX + 100, y: headerY + 20 },
+  thickness: 1,
+  color: rgb(0, 0, 0),
+});
+
+      page.drawText(`      Page ${pageNumber} sur ${totalPages}     `, {
         x: docX,
-        y: headerY + 10,
+        y: headerY + 7,
         size: 9,
         font: boldFont,
       });
@@ -400,6 +542,34 @@ export async function GET(
           y: currentY - 7,
           size: 11,
           font,
+        });
+
+        // Vertical line before INVESTISSEMENT
+        page.drawLine({
+          start: {
+            x: headerX ,
+            y: currentY +15,
+          },
+          end: {
+            x: headerX ,
+            y: currentY -20,
+          },
+          thickness: 0.7,
+          color: rgb(0, 0, 0),
+        });
+
+        // Vertical line after CONSOMMABLE
+        page.drawLine({
+          start: {
+            x: headerX + 515,
+            y: currentY + 15,
+          },
+          end: {
+            x: headerX + 515,
+            y: currentY - 25,
+          },
+          thickness: 0.7,
+          color: rgb(0, 0, 0),
         });
 
         currentY -= 20;
@@ -622,7 +792,7 @@ export async function GET(
           );
         }
 
-        currentY -= 55;
+        currentY -= 40;
 
         // -------------------------------------------------------
         // SIGNATURE BOXES
@@ -632,22 +802,23 @@ export async function GET(
         const sigHeight = 90;
 
         const sigTitles = [
-          ["MAGASIN IT", "Griffe et signature"],
+          ["   MAGASIN IT   ", "Griffe et signature"],
           [
             "VISA RESPONSABLE DES",
-            "ACTIFS ET MOYENS INFORMATIQUE",
-            "Griffe et signature",
+            "  ACTIFS ET MOYENS   ",
+            "    INFORMATIQUE  ",
+            "    Griffe et signature    ",
           ],
           [
-            "Transporteur",
-            "Nom et prénom",
-            "et signature",
+            "   Transporteur  ",
+            "    Nom et prénom   ",
+            "     et signature     ",
           ],
           [
-            "RECEPTIONNAIRE MATERIEL",
-            "SITE / PROJET",
-            "Nom et prénom",
-            "et signature",
+            " RECEPTIONNAIRE MATERIEL",
+            "   SITE / PROJET   ",
+            "    Nom et prénom    ",
+            "     et signature   ",
           ],
         ];
 
@@ -668,7 +839,7 @@ export async function GET(
 
           sigTitles[c].forEach((line) => {
             page.drawText(line, {
-              x: sigX + 4,
+              x: sigX + 14,
               y: lineY,
               size: 7,
               font: boldFont,
@@ -690,67 +861,71 @@ export async function GET(
       // FOOTER
       // =======================================================
 
-      const footerY1 = 35;
-      const footerY2 = 23;
-      const footerSize = 8;
+      const footerSize = 7;
+      const footerY1 = 79;
+      const footerY2 = 66;
 
-      const fText1 =
-        "Ce document est la propriété de SARPI";
-
+      const fText1 = "Ce document est la propriété de SARPI";
       const fText2 =
         "Il ne pourra sans autorisation écrite être reproduit ou communiqué à des tiers";
 
-      const w1 =
-        boldFont.widthOfTextAtSize(
-          fText1,
-          footerSize
-        );
+      const w1 = boldFont.widthOfTextAtSize(fText1, footerSize);
+      const w2 = boldFont.widthOfTextAtSize(fText2, footerSize);
 
-      const w2 =
-        boldFont.widthOfTextAtSize(
-          fText2,
-          footerSize
-        );
+      // White background behind the footer prevents table/signature content
+      // from making the footer difficult to read if the page is crowded.
+      page.drawRectangle({
+        x: 25,
+        y: 25,
+        width: pageWidth - 50,
+        height: 34,
+        color: rgb(1, 1, 1),
+        borderWidth: 0,
+      });
 
-     page.drawText(fText1, {
-  x: (pageWidth - w1) / 2,
-  y: footerY1,
-  size: footerSize,
-  font: boldFont,
-});
+      page.drawText(fText1, {
+        x: (pageWidth - w1) / 2,
+        y: footerY1,
+        size: footerSize,
+        font: boldFont,
+        color: rgb(0, 0, 0),
+      });
 
-page.drawText(fText2, {
-  x: (pageWidth - w2) / 2,
-  y: footerY2,
-  size: footerSize,
-  font: boldFont,
-});
+      page.drawText(fText2, {
+        x: (pageWidth - w2) / 2,
+        y: footerY2,
+        size: footerSize,
+        font: boldFont,
+        color: rgb(0, 0, 0),
+      });
 
-// Line under Text 1
-page.drawLine({
-  start: {
-    x: (pageWidth - w1) / 2,
-    y: footerY1 - 3,
-  },
-  end: {
-    x: (pageWidth + w1) / 2,
-    y: footerY1 - 3,
-  },
-  thickness: 0.7,
-});
+      // Underline first footer text
+      page.drawLine({
+        start: {
+          x: (pageWidth - w1) / 2,
+          y: footerY1 - 2,
+        },
+        end: {
+          x: (pageWidth + w1) / 2,
+          y: footerY1 - 2,
+        },
+        thickness: 0.5,
+        color: rgb(0, 0, 0),
+      });
 
-// Line under Text 2
-page.drawLine({
-  start: {
-    x: (pageWidth - w2) / 2,
-    y: footerY2 - 3,
-  },
-  end: {
-    x: (pageWidth + w2) / 2,
-    y: footerY2 - 3,
-  },
-  thickness: 0.7,
-});
+      // Underline second footer text
+      page.drawLine({
+        start: {
+          x: (pageWidth - w2) / 2,
+          y: footerY2 - 2,
+        },
+        end: {
+          x: (pageWidth + w2) / 2,
+          y: footerY2 - 2,
+        },
+        thickness: 0.5,
+        color: rgb(0, 0, 0),
+      });
     }
 
     // =========================================================

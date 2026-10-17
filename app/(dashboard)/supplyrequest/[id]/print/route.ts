@@ -168,30 +168,43 @@ export async function GET(
       // Document info
       const docX = pageWidth - 140;
 
-      page.drawText("MOD-SMI-PS2-33", {
+      page.drawText(" MOD-SMI-PS2-33 ", {
         x: docX,
         y: headerY + 55,
         size: 10,
         font: boldFont,
       });
 
-      page.drawText("Rev : 01", {
+      page.drawText("        Rev : 01     ", {
         x: docX,
         y: headerY + 40,
         size: 9,
         font,
       });
 
-      page.drawText("Du: 17/06/2026", {
+      page.drawText("   Du: 17/06/2026     ", {
         x: docX,
         y: headerY + 25,
         size: 9,
         font,
       });
 
-      page.drawText(`Page ${pageNumber} sur ${totalPages}`, {
+          page.drawLine({
+  start: {
+    x: docX -10,
+    y: headerY + 20,
+  },
+  end: {
+    x: docX + 100,
+    y: headerY + 20,
+  },
+  
+  color: rgb(0, 0, 0),
+});
+
+      page.drawText(`     Page ${pageNumber} sur ${totalPages}`, {
         x: docX,
-        y: headerY + 10,
+        y: headerY + 7,
         size: 9,
         font: boldFont,
       });
@@ -552,8 +565,8 @@ export async function GET(
       // FOOTER
       // =======================================================
 
-      const footerY1 = 35;
-      const footerY2 = 23;
+      const footerY1 = 80;
+      const footerY2 = 70;
       const footerSize = 8;
 
       const fText1 = "Ce document est la propriété de SARPI";

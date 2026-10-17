@@ -34,6 +34,11 @@ const typeOptions = [
   "IMPRIMANTE",
   "LAPTOP",
   "DATASHOW",
+  "Switch",
+  "Hard_Disk",
+  "Flash_Disk",
+  "Toner",
+  "Batterie"
 ] as const;
 
 export default async function DevicesPage({
@@ -167,11 +172,7 @@ export default async function DevicesPage({
   const brands = brandRecords.map((device) => device.brand);
 
   const columns = [
-    {
-      header: "ID",
-      accessor: "id",
-      className: "px-6 py-2 text-left border-b border-black",
-    },
+  
     {
       header: "Code-SARPI",
       accessor: "codeSarpi",
@@ -208,6 +209,11 @@ export default async function DevicesPage({
       className: "px-6 py-2 text-left border-b border-black",
     },
     {
+      header: "Qty",
+      accessor: "qty",
+      className: "px-6 py-2 text-left border-b border-black",
+    },
+    {
       header: "State",
       accessor: "state",
       className: "px-6 py-2 text-left border-b border-black",
@@ -235,14 +241,18 @@ export default async function DevicesPage({
   }
 };
 
-  const renderRow = (device: (typeof devices)[number],index=0) => {
+  const renderRow = (device: (typeof devices)[number],index: number) => {
    // Adjust index based on the current page
     return (
       <tr
         key={device.id}
         className="border-b border-gray-200 text-sm hover:bg-slate-50"
       >
-        <td className="px-6 py-4">{device.id}</td>
+
+        <td className="px-6 py-4 font-medium">
+          {index +1}
+        </td>
+        
 
         <td className="px-6 py-4 font-medium">
           {device.codeSarpi || "-"}
@@ -263,6 +273,7 @@ export default async function DevicesPage({
         </td>
 
         <td className="px-6 py-4">{device.condition}</td>
+         <td className="px-6 py-4">{device.qty}</td>
 
         <td className="px-6 py-4">
   <span

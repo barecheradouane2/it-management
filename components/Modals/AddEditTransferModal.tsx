@@ -28,7 +28,7 @@ import { getAllDevicesForTransfer } from "@/lib/actions/device";
 
 type Device = {
   id: number;
-  codeSarpi: string;
+ codeSarpi: string | null;
   serialNumber?: string | null;
   type: string;
   brand: string;
@@ -70,6 +70,11 @@ const deviceTypes = [
   "IMPRIMANTE",
   "LAPTOP",
   "DATASHOW",
+  "Switch",
+  "Hard_Disk",
+  "Flash_Disk",
+  "Toner",
+  "Batterie"
 ];
 
 const emptyForm: TransferFormData = {

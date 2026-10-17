@@ -114,80 +114,149 @@ export async function createAssignment(data: AssignmentFormData) {
 }
 
 // UPDATE
+
 export async function updateAssignment(
-id: number,
-data: AssignmentFormData
+  id: number,
+  data: AssignmentFormData
 ) {
-try {
-const assignment = await prisma.assignment.update({
-where: { id },
-data: {
-deviceId: data.deviceId,
-employeeId: data.employeeId,
-bureau: data.bureau || null,
-block: data.block || null,
-hostName: data.hostName || null,
-condition: data.condition,
-note: data.note || null,
-assignedAt: data.assignedAt
-? new Date(data.assignedAt)
-: new Date(),
-returnedAt: data.returnedAt
-? new Date(data.returnedAt)
-: null,
-},
-});
+  try {
+    const assignment = await prisma.$transaction(async (tx) => {
+      // 1. Find the existing assignment
+      const existingAssignment = await tx.assignment.findUnique({
+        where: { id },
+      });
 
+      if (!existingAssignment) {
+        throw new Error("ASSIGNMENT_NOT_FOUND");
+      }
 
-revalidatePath("/assignments");
-revalidatePath("/devices");
-revalidatePath("/employees");
+      // 2. Determine whether the device has been returned
+      const returnedAt = data.returnedAt
+        ? new Date(data.returnedAt)
+        : null;
 
-return {
-  success: true,
-  assignment,
-};
+      // 3. Update the assignment
+      const updatedAssignment = await tx.assignment.update({
+        where: { id },
+        data: {
+          deviceId: data.deviceId,
+          employeeId: data.employeeId,
+          bureau: data.bureau || null,
+          block: data.block || null,
+          hostName: data.hostName || null,
+          condition: data.condition,
+          note: data.note || null,
+          assignedAt: data.assignedAt
+            ? new Date(data.assignedAt)
+            : new Date(),
+          returnedAt,
+        },
+      });
 
+      // 4. Update the device status
+      if (returnedAt) {
+        // If returned, set the device to stock
+        await tx.device.update({
+          where: { id: data.deviceId },
+          data: {
+            state: DeviceState.en_Stock,
+          },
+        });
+      } else {
+        // If not returned, set the device to service
+        await tx.device.update({
+          where: { id: data.deviceId },
+          data: {
+            state: DeviceState.en_Service,
+          },
+        });
+      }
 
-} catch (error) {
-console.error("Error updating assignment:", error);
+      return updatedAssignment;
+    });
 
+    // 5. Refresh affected pages
+    revalidatePath("/assignments");
+    revalidatePath("/devices");
+    revalidatePath("/employees");
 
-return {
-  success: false,
-  error: "Failed to update assignment",
-};
+    return {
+      success: true,
+      assignment,
+    };
+  } catch (error) {
+    console.error("Error updating assignment:", error);
 
+    if (error instanceof Error &&
+        error.message === "ASSIGNMENT_NOT_FOUND") {
+      return {
+        success: false,
+        error: "Assignment not found.",
+      };
+    }
 
+    return {
+      success: false,
+      error: "Failed to update assignment.",
+    };
+  }
 }
-}
+
 
 // DELETE
 export async function deleteAssignment(id: number) {
-try {
-await prisma.assignment.delete({
-where: { id },
-});
+  try {
+    // Find the assignment before deleting it
+    const assignment = await prisma.assignment.findUnique({
+      where: { id },
+    });
 
+    if (!assignment) {
+      return {
+        success: false,
+        error: "Assignment not found",
+      };
+    }
 
-revalidatePath("/assignments");
-revalidatePath("/devices");
-revalidatePath("/employees");
+    // Delete the assignment and update the device
+    await prisma.$transaction(async (tx) => {
+      await tx.assignment.delete({
+        where: { id },
+      });
 
-return {
-  success: true,
-};
+      // Check whether the device has any remaining assignments
+      const remainingAssignments = await tx.assignment.count({
+        where: {
+          deviceId: assignment.deviceId,
+        },
+      });
 
+      // Return the device to stock if no assignments remain
+      if (remainingAssignments === 0) {
+        await tx.device.update({
+          where: {
+            id: assignment.deviceId,
+          },
+          data: {
+            state: DeviceState.en_Stock,
+          },
+        });
+      }
+    });
 
-} catch (error) {
-console.error("Error deleting assignment:", error);
+    revalidatePath("/assignments");
+    revalidatePath("/devices");
+    revalidatePath("/employees");
 
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error deleting assignment:", error);
 
-return {
-  success: false,
-  error: "Failed to delete assignment",
-};
-
-
-}
+    return {
+      success: false,
+      error: "Failed to delete assignment",
+    };
+  }
 }

@@ -83,15 +83,15 @@ export default async function SupplyRequestsPage({
     : {};
 
   const columns = [
-    { header: "ID", accessor: "id" },
-    { header: "N° Demande", accessor: "requestNumber" },
-    { header: "Objet", accessor: "purpose" },
-    { header: "Date Demande", accessor: "requestDate" },
-    { header: "Échéance Souhaitée", accessor: "desiredDeadline" },
-    { header: "Statut", accessor: "status" },
-    { header: "Articles", accessor: "items" },
-    { header: "Note", accessor: "note" },
-    { header: "Actions", accessor: "action" },
+   
+    { header: "N° Demande", accessor: "requestNumber" ,className: "px-6   text-left  border-b-1 border-black " },
+    { header: "Objet", accessor: "purpose" ,className: "px-6  text-left  border-b-1 border-black " },
+    { header: "Date Demande", accessor: "requestDate" ,className: "px-6  text-left  border-b-1 border-black " },
+    { header: "Échéance Souhaitée", accessor: "desiredDeadline" ,className: "px-6  text-left  border-b-1 border-black " },
+    { header: "Statut", accessor: "status" ,className: "px-6  text-left  border-b-1 border-black " },
+    { header: "Articles", accessor: "items" ,className: "px-6  text-left  border-b-1 border-black " },
+    { header: "Note", accessor: "note" ,className: "px-6  text-left  border-b-1 border-black " },
+    { header: "Actions", accessor: "action" ,className: "px-6  text-left  border-b-1 border-black " },
   ];
 
   const [supplyRequests, count] = await prisma.$transaction([
@@ -138,14 +138,14 @@ export default async function SupplyRequestsPage({
   };
 
   const renderRow = (
-    request: (typeof supplyRequests)[number]
+    request: (typeof supplyRequests)[number],index: number
   ) => (
     <tr
       key={request.id}
       className="border-b border-gray-200 text-sm hover:bg-slate-50"
     >
       {/* ID */}
-      <td className="px-6 py-4">{request.id}</td>
+      <td className="px-6 py-4">{index + 1}</td>
 
       {/* Request Number */}
       <td className="px-6 py-4 font-medium whitespace-nowrap">

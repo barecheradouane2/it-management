@@ -58,15 +58,15 @@ export default async function TransfersPage({
     : {};
 
   const columns = [
-    { header: "ID", accessor: "id" },
-    { header: "Expéditeur", accessor: "siteExpediteur" },
-    { header: "Date Expédition", accessor: "dateExpediteur" },
-    { header: "Destinataire", accessor: "siteDestinataire" },
-    { header: "Date Réception", accessor: "dateDestinataire" },
-    { header: "Nature", accessor: "nature" },
-    { header: "Matériels", accessor: "items" },
-    { header: "Note", accessor: "note" },
-    { header: "Action", accessor: "action" },
+    
+    { header: "Expéditeur", accessor: "siteExpediteur", className: "px-6 py-2  text-left  border-b-1 border-black" },
+    { header: "Date Expédition", accessor: "dateExpediteur", className: "px-6 py-2  text-left  border-b-1 border-black" },
+    { header: "Destinataire", accessor: "siteDestinataire", className: "px-6 py-2  text-left  border-b-1 border-black" },
+    { header: "Date Réception", accessor: "dateDestinataire", className: "px-6 py-2  text-left  border-b-1 border-black" },
+    { header: "Nature", accessor: "nature", className: "px-6 py-2  text-left  border-b-1 border-black" },
+    { header: "Matériels", accessor: "items", className: "px-6 py-2  text-left  border-b-1 border-black" },
+    { header: "Note", accessor: "note", className: "px-6 py-2  text-left  border-b-1 border-black" },
+    { header: "Action", accessor: "action", className: "px-6 py-2  text-left  border-b-1 border-black" },
   ];
 
   const [transfers, count] = await prisma.$transaction([
@@ -94,15 +94,17 @@ export default async function TransfersPage({
     }),
   ]);
 
-  const renderRow = (transfer: (typeof transfers)[number]) => (
+  const renderRow = (transfer: (typeof transfers)[number],index: number) => (
     <tr
       key={transfer.id}
       className="border-b border-gray-200 text-sm hover:bg-slate-50"
     >
       {/* ID */}
-      <td className="px-6 py-4">
-        {transfer.id}
+
+       <td className="px-6 py-4 font-medium">
+        {index + 1}
       </td>
+     
 
       {/* Site Expéditeur */}
       <td className="px-6 py-4 font-medium">

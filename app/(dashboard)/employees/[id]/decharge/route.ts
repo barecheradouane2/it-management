@@ -5,6 +5,7 @@ import {
 } from "pdf-lib";
 
 import { prisma } from "@/lib/prisma";
+import { DeviceState } from "@prisma/client";
 import fs from "fs";
 import path from "path";
 
@@ -33,15 +34,24 @@ export async function GET(
     // =========================================================
 
     const employee = await prisma.employee.findUnique({
-      where: { id: employeeId },
-      include: {
-        assignments: {
-          where: { returnedAt: null },
-          include: { device: true },
-          orderBy: { assignedAt: "asc" },
+  where: { id: employeeId },
+  include: {
+    assignments: {
+      where: {
+        returnedAt: null,
+        device: {
+          state: DeviceState.en_Service,
         },
       },
-    });
+      include: {
+        device: true,
+      },
+      orderBy: {
+        assignedAt: "asc",
+      },
+    },
+  },
+});
 
     if (!employee) {
       return new Response("Employee not found", {
@@ -720,8 +730,9 @@ export async function GET(
     // DRAW SIGNATURE
     // =========================================================
 
-    const drawSignature = (page: any) => {
-      let signatureY = 240;
+    const drawSignature = (page: any,tableBottomY: number) => {
+      // let signatureY = 240;
+        let signatureY = tableBottomY - 18;
 
       page.drawText(
         "SARPI SPA se réserve le droit de poursuivre devant les juridictions compétentes toute personne",
@@ -923,9 +934,9 @@ export async function GET(
       }
 
       // Signature only on the last page
-      if (pageNumber === totalPages) {
-        drawSignature(page);
-      }
+      
+        drawSignature(page,y);
+      
 
       drawFooter(page);
     }

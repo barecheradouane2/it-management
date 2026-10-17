@@ -16,6 +16,8 @@ enum DeviceType {
   Switch
   Hard_Disk
   Flash_Disk
+  Toner
+  Batterie
 }
 
 enum DeviceCondition {
@@ -94,7 +96,7 @@ model Device {
   condition    DeviceCondition @default(NEUF)
   state        DeviceState     @default(en_Stock)
   note         String?
-   qty          Int             @default(1)   
+  qty          Int             @default(1)   
 
   assignments   Assignment[]
   transferItems TransferItem[]
@@ -114,6 +116,7 @@ model Assignment {
   hostName  String?
   condition AssignmentCondition @default(NEUF)
   note      String?
+  qty        Int @default(1)
 
   assignedAt DateTime  @default(now())
   returnedAt DateTime?
