@@ -103,6 +103,13 @@ mode: "insensitive" as const,
 
 const [devices, employees] = await Promise.all([
   prisma.device.findMany({
+
+     where: {
+      state: "en_Stock",
+      qty: {
+        gt: 0,
+      },
+    },
     
     select: {
       id: true,

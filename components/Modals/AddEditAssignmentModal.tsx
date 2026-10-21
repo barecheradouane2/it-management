@@ -19,6 +19,7 @@ type DeviceOption = {
   codeSarpi: string | null;
   brand: string;
   model: string | null;
+  
 };
 
 type EmployeeOption = {
@@ -86,6 +87,8 @@ export default function AddEditAssignmentModal({
   } = useForm<AssignmentFormData>({
     defaultValues: emptyValues,
   });
+
+  
 
   const getAssignmentValues = (
     item: Assignment
