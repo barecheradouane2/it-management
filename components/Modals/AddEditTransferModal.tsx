@@ -70,6 +70,7 @@ const deviceTypes = [
   "IMPRIMANTE",
   "LAPTOP",
   "DATASHOW",
+  "POINT_ACCES",
   "Switch",
   "Hard_Disk",
   "Flash_Disk",

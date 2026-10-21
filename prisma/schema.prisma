@@ -13,11 +13,12 @@ enum DeviceType {
   IMPRIMANTE
   LAPTOP
   DATASHOW
-  Switch
-  Hard_Disk
-  Flash_Disk
-  Toner
-  Batterie
+  POINT_ACCES
+  SWITCH
+  HARD_DISK
+  FLASH_DISK
+  TONER
+  BATTERIE
 }
 
 enum DeviceCondition {
@@ -86,7 +87,7 @@ model Employee {
 
 model Device {
   id           Int             @id @default(autoincrement())
-  codeSarpi String? @unique
+  codeSarpi    String? @unique
   serialNumber String?         @unique
   type         DeviceType
   brand        String
@@ -223,4 +224,21 @@ model SupplyRequestItem {
 
   @@index([supplyRequestId])
   @@index([designation])
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  fullname     String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(USER)
+  isActive     Boolean  @default(true)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

@@ -34,11 +34,12 @@ const typeOptions = [
   "IMPRIMANTE",
   "LAPTOP",
   "DATASHOW",
-  "Switch",
-  "Hard_Disk",
-  "Flash_Disk",
-  "Toner",
-  "Batterie"
+  "POINT_ACCES",
+  "SWITCH",
+  "HARD_DISK",
+  "FLASH_DISK",
+  "TONER",
+  "BATTERIE"
 ] as const;
 
 export default async function DevicesPage({

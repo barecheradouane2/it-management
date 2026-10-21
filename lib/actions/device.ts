@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth-guard";
 import {
 DeviceType,
 DeviceCondition,
@@ -24,6 +25,8 @@ note: string;
 
 // CREATE
 export async function createDevice(data: DeviceFormData) {
+
+   await requireAdmin();
 try {
 const device = await prisma.device.create({
 data: {

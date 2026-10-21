@@ -40,11 +40,12 @@ const deviceTypes: DeviceFormData["type"][] = [
   "IMPRIMANTE",
   "LAPTOP",
   "DATASHOW",
-  "Switch",
-  "Hard_Disk",
-  "Flash_Disk",
-  "Toner",
-  "Batterie"
+  "POINT_ACCES",
+  "SWITCH",
+  "HARD_DISK",
+  "FLASH_DISK",
+  "TONER",
+  "BATTERIE"
 ];
 
 // These values must match the Prisma Condition enum.
@@ -232,12 +233,7 @@ export default function AddEditDeviceModal({
 
                   <input
                     placeholder="Enter SARPI code"
-                    {...register("codeSarpi", {
-                      required: "SARPI code is required",
-                      validate: (value) =>
-                        value.trim().length > 0 ||
-                        "SARPI code cannot be empty",
-                    })}
+                    {...register("codeSarpi")}
                     className={inputClass}
                   />
 
