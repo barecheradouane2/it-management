@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { Service } from "@prisma/client";
 
 export type EmployeeFormData = {
   fullname: string;
@@ -11,6 +12,16 @@ export type EmployeeFormData = {
   service: string;
 };
 
+
+function parseService(value: string | null): Service | null {
+  if (!value) return null;
+
+  if (Object.values(Service).includes(value as Service)) {
+    return value as Service;
+  }
+
+  throw new Error(`Invalid service: ${value}`);
+}
 // CREATE
 export async function createEmployee(data: EmployeeFormData) {
   try {
@@ -20,7 +31,7 @@ export async function createEmployee(data: EmployeeFormData) {
         function: data.function || null,
         email: data.email || null,
         phone: data.phone || null,
-        service: data.service || null,
+        service: parseService(data.service),
       },
     });
 
@@ -55,7 +66,7 @@ export async function updateEmployee(
         function: data.function || null,
         email: data.email || null,
         phone: data.phone || null,
-        service: data.service || null,
+        service: parseService(data.service),
       },
     });
 
