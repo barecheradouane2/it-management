@@ -11,6 +11,37 @@ import path from "path";
 
 export const runtime = "nodejs";
 
+// Helper function to split text into lines matching a column's width
+function wrapText(
+  text: string,
+  maxWidth: number,
+  fontSize: number,
+  font: any
+): string[] {
+  if (!text) return [];
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+
+    if (testWidth <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -34,24 +65,21 @@ export async function GET(
     // =========================================================
 
     const employee = await prisma.employee.findUnique({
-  where: { id: employeeId },
-  include: {
-    assignments: {
-      where: {
-        returnedAt: null,
-        device: {
-          state: DeviceState.en_Service,
+      where: { id: employeeId },
+      include: {
+        assignments: {
+          where: {
+            returnedAt: null,
+          },
+          include: {
+            device: true,
+          },
+          orderBy: {
+            assignedAt: "asc",
+          },
         },
       },
-      include: {
-        device: true,
-      },
-      orderBy: {
-        assignedAt: "asc",
-      },
-    },
-  },
-});
+    });
 
     if (!employee) {
       return new Response("Employee not found", {
@@ -180,13 +208,10 @@ export async function GET(
       const width = pageWidth;
       const height = pageHeight;
 
-      // Header: approximately 5 points from the top
-      
-
       const headerX = 40;
-     const headerY = height - 110;
-     const headerWidth = width - 80;
-    const headerHeight = 90;
+      const headerY = height - 110;
+      const headerWidth = width - 80;
+      const headerHeight = 90;
 
       // Outer border
       page.drawRectangle({
@@ -336,7 +361,7 @@ export async function GET(
       });
 
       page.drawText(
-        "                                               Demeurant à  ...........................",
+        "                                                 Demeurant à  ...........................",
         {
           x: 180,
           y,
@@ -348,7 +373,7 @@ export async function GET(
       y -= 20;
 
       page.drawText(
-        "Wilaya de                      dont le numéro de la pièce d’identité CN/PC est                                             occupant le",
+        "Wilaya de                       dont le numéro de la pièce d’identité CN/PC est                                             occupant le",
         {
           x: 50,
           y,
@@ -374,7 +399,7 @@ export async function GET(
       });
 
       page.drawText(
-        `                                              affecté à                          déclare avoir reçus le  ${today}`,
+        `                                                affecté à                          déclare avoir reçus le  ${today}`,
         {
           x: 150,
           y,
@@ -461,7 +486,7 @@ export async function GET(
       y -= 20;
 
       page.drawText(
-        "     Station,Pc,Ecran,chargeur, Appareil photo, disque externe, tablette...)",
+        "    Station,Pc,Ecran,chargeur, Appareil photo, disque externe, tablette...)",
         {
           x: 60,
           y,
@@ -599,14 +624,14 @@ export async function GET(
       const serialNumber = device.serialNumber || "-";
       const purpose = "Mise à disposition";
 
+      const qtyText = String(assignment.qty ?? 1);
+
       const startDate =
         assignment.assignedAt.toLocaleDateString("fr-FR");
 
       const endDate = assignment.returnedAt
         ? assignment.returnedAt.toLocaleDateString("fr-FR")
         : "En cours";
-
-      const period = `${startDate} - ${endDate}`;
 
       page.drawRectangle({
         x: tableX,
@@ -638,47 +663,43 @@ export async function GET(
         }
       }
 
-      const line1 = `${device.type}${
-        device.brand ? ` - ${device.brand}` : ""
-      }`;
+      // Column 1: Désignation (Type on top, Brand and Model below)
+      const typeText = String(device.type).replaceAll("_", " ");
+      const modelDetail = `${device.brand || ""}${device.model ? ` ${device.model}` : ""}`.trim();
 
-      const line2 = device.model || "";
-
-      const line3 = device.codeSarpi
-        ? `(${device.codeSarpi})`
-        : "";
-
-      page.drawText(line1.substring(0, 22), {
+      page.drawText(typeText.substring(0, 24), {
         x: tableX + 4,
-        y: y - 5,
-        size: 8,
-        font,
+        y: y - 8,
+        size: 7.5,
+        font: boldFont,
       });
 
-      if (line2) {
-        page.drawText(line2.substring(0, 22), {
+      if (modelDetail) {
+        const modelLines = wrapText(modelDetail, colDesignation - 8, 7, font);
+        let modelY = y - 17;
+
+        for (let i = 0; i < Math.min(modelLines.length, 2); i++) {
+          page.drawText(modelLines[i], {
+            x: tableX + 4,
+            y: modelY,
+            size: 7,
+            font,
+          });
+          modelY -= 8;
+        }
+      }
+
+      if (device.codeSarpi) {
+        page.drawText(`(${device.codeSarpi})`, {
           x: tableX + 4,
-          y: y - 15,
-          size: 8,
-          font,
+          y: y - 27,
+          size: 7.5,
+          font:boldFont,
         });
       }
 
-      if (line3) {
-        page.drawText(line3.substring(0, 22), {
-          x: tableX + 4,
-          y: y - 25,
-          size: 8,
-          font,
-        });
-      }
-
-      const qtyText = "01";
-      const qtyWidth = font.widthOfTextAtSize(
-        qtyText,
-        8
-      );
-
+      // Column 2: Qté (Centered)
+      const qtyWidth = font.widthOfTextAtSize(qtyText, 8);
       page.drawText(qtyText, {
         x:
           tableX +
@@ -689,39 +710,44 @@ export async function GET(
         font,
       });
 
-      page.drawText(serialNumber.substring(0, 20), {
-        x:
-          tableX +
-          colDesignation +
-          colQty +
-          4,
-        y: y - 15,
-        size: 8,
+      // Column 3: N° Série (Auto-wrapped into 2 lines if long)
+      const serialLines = wrapText(serialNumber, colSerial - 8, 7.5, font);
+      let serialY = serialLines.length > 1 ? y - 10 : y - 15;
+      for (let i = 0; i < Math.min(serialLines.length, 2); i++) {
+        page.drawText(serialLines[i], {
+          x: tableX + colDesignation + colQty + 4,
+          y: serialY,
+          size: 7.5,
+          font,
+        });
+        serialY -= 9;
+      }
+
+      // Column 4: Objet de l'affectation (Auto-wrapped into 2 lines)
+      const purposeLines = wrapText(purpose, colPurpose - 8, 7.5, font);
+      let purposeY = purposeLines.length > 1 ? y - 10 : y - 15;
+      for (let i = 0; i < Math.min(purposeLines.length, 2); i++) {
+        page.drawText(purposeLines[i], {
+          x: tableX + colDesignation + colQty + colSerial + 4,
+          y: purposeY,
+          size: 7.5,
+          font,
+        });
+        purposeY -= 9;
+      }
+
+      // Column 5: Période (Stacked cleanly as two lines)
+      page.drawText(`Du: ${startDate}`, {
+        x: tableX + colDesignation + colQty + colSerial + colPurpose + 4,
+        y: y - 10,
+        size: 7.5,
         font,
       });
 
-      page.drawText(purpose.substring(0, 15), {
-        x:
-          tableX +
-          colDesignation +
-          colQty +
-          colSerial +
-          4,
-        y: y - 15,
-        size: 8,
-        font,
-      });
-
-      page.drawText(period, {
-        x:
-          tableX +
-          colDesignation +
-          colQty +
-          colSerial +
-          colPurpose +
-          4,
-        y: y - 15,
-        size: 8,
+      page.drawText(`Au: ${endDate}`, {
+        x: tableX + colDesignation + colQty + colSerial + colPurpose + 4,
+        y: y - 20,
+        size: 7.5,
         font,
       });
     };
@@ -730,9 +756,8 @@ export async function GET(
     // DRAW SIGNATURE
     // =========================================================
 
-    const drawSignature = (page: any,tableBottomY: number) => {
-      // let signatureY = 240;
-        let signatureY = tableBottomY - 18;
+    const drawSignature = (page: any, tableBottomY: number) => {
+      let signatureY = tableBottomY - 18;
 
       page.drawText(
         "SARPI SPA se réserve le droit de poursuivre devant les juridictions compétentes toute personne",
@@ -933,11 +958,7 @@ export async function GET(
         y -= rowHeight;
       }
 
-      // Signature only on the last page
-      
-        drawSignature(page,y);
-      
-
+      drawSignature(page, y);
       drawFooter(page);
     }
 

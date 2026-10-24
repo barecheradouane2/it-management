@@ -117,7 +117,8 @@ const [devices, employees] = await Promise.all([
       brand: true,
       model: true,
       state:true,
-      qty:true
+      qty:true,
+      type: true
 
     },
     orderBy: {
@@ -160,6 +161,7 @@ const columns = [
 
 { header: "Device Code", accessor: "device" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
 { header: "Employee", accessor: "employee" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
+{ header: "Qty", accessor: "qty", className: "px-6 py-2 text-left border-b-1 border-black" },
 { header: "Bureau", accessor: "bureau" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
 { header: "Block", accessor: "block" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
 { header: "Hostname", accessor: "hostName" ,className: "px-6 py-2  text-left  border-b-1 border-black" },
@@ -195,6 +197,8 @@ assignment: (typeof assignments)[number]
   <td className="px-5 py-4">
     {assignment.employee.fullname}
   </td>
+
+  <td className="px-5 py-4 font-semibold">{assignment.qty}</td>
 
   <td className="px-5 py-4">
     {assignment.bureau || "-"}

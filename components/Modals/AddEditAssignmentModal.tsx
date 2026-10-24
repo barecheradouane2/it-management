@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { Pencil, X } from "lucide-react";
 import { toast } from "sonner";
@@ -12,16 +11,22 @@ import {
   type AssignmentFormData,
 } from "@/lib/actions/assignment";
 
-import type { Block, AssignmentCondition } from "@prisma/client";
+import { Block, AssignmentCondition, DeviceType } from "@prisma/client";
+
+const BULK_DEVICE_TYPES: DeviceType[] = [
+  DeviceType.FLASH_DISK,
+  DeviceType.ADAPTATEUR_WIFI,
+  DeviceType.HARD_DISK_EXTERN,
+];
 
 type DeviceOption = {
   id: number;
   codeSarpi: string | null;
   brand: string;
   model: string | null;
-  state:string,
-  qty:number
-  
+  state: string;
+  qty: number;
+  type: DeviceType;
 };
 
 type EmployeeOption = {
@@ -40,6 +45,7 @@ type Assignment = {
   note: string | null;
   assignedAt: Date | string;
   returnedAt: Date | string | null;
+  qty: number;
 };
 
 type Props = {
@@ -49,7 +55,6 @@ type Props = {
   onSuccess?: () => void;
 };
 
-// Make sure these values match your Prisma Block enum.
 const blocks = [
   "BLOCK_SDR",
   "BLOCK_DR",
@@ -70,6 +75,7 @@ const emptyValues: AssignmentFormData = {
   note: "",
   assignedAt: "",
   returnedAt: "",
+  qty: 1,
 };
 
 export default function AddEditAssignmentModal({
@@ -85,16 +91,48 @@ export default function AddEditAssignmentModal({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<AssignmentFormData>({
     defaultValues: emptyValues,
   });
 
-  
+  const selectedDeviceId = watch("deviceId");
 
-  const getAssignmentValues = (
-    item: Assignment
-  ): AssignmentFormData => ({
+  const selectedDevice = useMemo(() => {
+    return devices.find((d) => d.id === Number(selectedDeviceId));
+  }, [devices, selectedDeviceId]);
+
+  const isBulk = selectedDevice
+    ? BULK_DEVICE_TYPES.includes(selectedDevice.type)
+    : false;
+
+  // Maximum quantity allowed to assign
+  const maxStockAllowed = useMemo(() => {
+    if (!selectedDevice) return 1;
+    if (!isBulk) return 1;
+    if (isEdit && assignment && assignment.deviceId === selectedDevice.id) {
+      return (selectedDevice.qty ?? 0) + (assignment.qty ?? 0);
+    }
+    return selectedDevice.qty ?? 0;
+  }, [selectedDevice, isBulk, isEdit, assignment]);
+
+  // Adjust qty when switching between bulk and single items
+  useEffect(() => {
+    if (!isBulk) {
+      setValue("qty", 1);
+    }
+  }, [isBulk, setValue]);
+
+  const availableDevices = useMemo(() => {
+    if (isEdit) return devices;
+    return devices.filter(
+      (device) => device.state === "en_Stock" && device.qty > 0
+    );
+  }, [devices, isEdit]);
+
+  const getAssignmentValues = (item: Assignment): AssignmentFormData => ({
     deviceId: item.deviceId,
     employeeId: item.employeeId,
     bureau: item.bureau ?? "",
@@ -102,12 +140,11 @@ export default function AddEditAssignmentModal({
     hostName: item.hostName ?? "",
     condition: item.condition,
     note: item.note ?? "",
-    assignedAt: new Date(item.assignedAt)
-      .toISOString()
-      .slice(0, 10),
+    assignedAt: new Date(item.assignedAt).toISOString().slice(0, 10),
     returnedAt: item.returnedAt
       ? new Date(item.returnedAt).toISOString().slice(0, 10)
       : "",
+    qty: item.qty ?? 1,
   });
 
   useEffect(() => {
@@ -118,9 +155,7 @@ export default function AddEditAssignmentModal({
 
   const openModal = () => {
     reset(
-      assignment
-        ? getAssignmentValues(assignment)
-        : { ...emptyValues }
+      assignment ? getAssignmentValues(assignment) : { ...emptyValues }
     );
     setOpen(true);
   };
@@ -128,23 +163,20 @@ export default function AddEditAssignmentModal({
   const closeModal = () => {
     setOpen(false);
     reset(
-      assignment
-        ? getAssignmentValues(assignment)
-        : { ...emptyValues }
+      assignment ? getAssignmentValues(assignment) : { ...emptyValues }
     );
   };
 
- if (!isEdit) {
-  devices = devices.filter(
-    (device) => device.state === "en_Stock" && device.qty > 0
-  );
-}
-
   const onSubmit = async (data: AssignmentFormData) => {
     try {
+      const payload: AssignmentFormData = {
+        ...data,
+        qty: isBulk ? Number(data.qty) || 1 : 1,
+      };
+
       const result = isEdit
-        ? await updateAssignment(assignment.id, data)
-        : await createAssignment(data);
+        ? await updateAssignment(assignment.id, payload)
+        : await createAssignment(payload);
 
       if (!result.success) {
         toast.error(result.error);
@@ -166,7 +198,7 @@ export default function AddEditAssignmentModal({
   };
 
   const inputClass =
-    "w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200";
+    "w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed";
 
   const labelClass =
     "mb-2 block text-left text-sm font-medium text-slate-700";
@@ -218,13 +250,10 @@ export default function AddEditAssignmentModal({
             </div>
 
             {/* Form */}
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="space-y-5 p-6"
-            >
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-6">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {/* Device */}
-                <div>
+                <div className="sm:col-span-2">
                   <label className={labelClass}>Device *</label>
                   <select
                     {...register("deviceId", {
@@ -236,10 +265,11 @@ export default function AddEditAssignmentModal({
                     className={inputClass}
                   >
                     <option value={0}>Select a device</option>
-                    {devices.map((device) => (
+                    {availableDevices.map((device) => (
                       <option key={device.id} value={device.id}>
-                        {device.codeSarpi} - {device.brand}
-                        {device.model ? ` ${device.model}` : ""}
+                        {device.codeSarpi ? `[${device.codeSarpi}] ` : ""}
+                        {device.brand} {device.model ? `${device.model} ` : ""}
+                        - ({device.type.replaceAll("_", " ")}) | Stock: {device.qty}
                       </option>
                     ))}
                   </select>
@@ -276,6 +306,50 @@ export default function AddEditAssignmentModal({
                   )}
                 </div>
 
+                {/* Quantity */}
+                <div>
+                  <label className={labelClass}>
+                    Quantity *{" "}
+                    {isBulk && selectedDevice && (
+                      <span className="text-xs font-normal text-slate-500">
+                        (Stock max: {maxStockAllowed})
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="number"
+                    disabled={!isBulk}
+                    min={1}
+                    max={isBulk ? maxStockAllowed : 1}
+                    placeholder="1"
+                    {...register("qty", {
+                      valueAsNumber: true,
+                      required: "Quantity is required",
+                      min: {
+                        value: 1,
+                        message: "Quantity must be at least 1",
+                      },
+                      validate: (val) => {
+                        if (isBulk && val > maxStockAllowed) {
+                          return `Cannot assign more than available stock (${maxStockAllowed})`;
+                        }
+                        return true;
+                      },
+                    })}
+                    className={inputClass}
+                  />
+                  {errors.qty && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.qty.message}
+                    </p>
+                  )}
+                  {!isBulk && selectedDevice && (
+                    <p className="mt-1 text-xs text-slate-400">
+                      Single-unit devices are tracked with a fixed quantity of 1.
+                    </p>
+                  )}
+                </div>
+
                 {/* Bureau */}
                 <div>
                   <label className={labelClass}>Bureau</label>
@@ -289,10 +363,7 @@ export default function AddEditAssignmentModal({
                 {/* Block */}
                 <div>
                   <label className={labelClass}>Block / Location</label>
-                  <select
-                    {...register("block")}
-                    className={inputClass}
-                  >
+                  <select {...register("block")} className={inputClass}>
                     <option value="">Select a location</option>
                     {blocks.map((block) => (
                       <option key={block} value={block}>
@@ -389,8 +460,8 @@ export default function AddEditAssignmentModal({
                   {isSubmitting
                     ? "Saving..."
                     : isEdit
-                      ? "Save Changes"
-                      : "Add Assignment"}
+                    ? "Save Changes"
+                    : "Add Assignment"}
                 </button>
               </div>
             </form>

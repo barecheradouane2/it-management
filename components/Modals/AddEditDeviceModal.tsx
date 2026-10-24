@@ -45,7 +45,9 @@ const deviceTypes: DeviceFormData["type"][] = [
   "HARD_DISK",
   "FLASH_DISK",
   "TONER",
-  "BATTERIE"
+  "BATTERIE",
+  "ADAPTATEUR_WIFI",
+  "HARD_DISK_EXTERN"
 ];
 
 // These values must match the Prisma Condition enum.

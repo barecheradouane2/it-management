@@ -39,7 +39,9 @@ const typeOptions = [
   "HARD_DISK",
   "FLASH_DISK",
   "TONER",
-  "BATTERIE"
+  "BATTERIE",
+  "ADAPTATEUR_WIFI",
+  "HARD_DISK_EXTERN"
 ] as const;
 
 export default async function DevicesPage({
