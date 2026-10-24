@@ -75,7 +75,9 @@ const deviceTypes = [
   "Hard_Disk",
   "Flash_Disk",
   "Toner",
-  "Batterie"
+  "Batterie",
+  "ADAPTATEUR_WIFI",
+  "HARD_DISK_EXTERN"
 ];
 
 const emptyForm: TransferFormData = {

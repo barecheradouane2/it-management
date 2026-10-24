@@ -1,4 +1,3 @@
-
 "use server";
 
 import { prisma } from "@/lib/prisma";
@@ -77,29 +76,9 @@ function validateTransferData(data: TransferFormData) {
   return validateItems(data.items);
 }
 
-// Set device state after transfer items have been changed.
-// If another transfer still references the device, it remains Transfert.
-// Otherwise, it returns to en_Stock.
-async function refreshDeviceState(
-  tx: any,
-  deviceId: number
-) {
-  const transferCount = await tx.transferItem.count({
-    where: { deviceId },
-  });
-
-  await tx.device.update({
-    where: { id: deviceId },
-    data: {
-      state:
-        transferCount > 0
-          ? DeviceState.Transfert
-          : DeviceState.en_Stock,
-    },
-  });
-}
-
-// CREATE
+// ----------------------------------------------------------------------
+// 1. CREATE TRANSFER
+// ----------------------------------------------------------------------
 export async function createTransfer(data: TransferFormData) {
   try {
     const validationError = validateTransferData(data);
@@ -116,13 +95,12 @@ export async function createTransfer(data: TransferFormData) {
         ...new Set(data.items.map((item) => Number(item.deviceId))),
       ];
 
-      // Check that all devices exist
+      // Fetch all referenced devices
       const devices = await tx.device.findMany({
-        where: {
-          id: { in: deviceIds },
-        },
+        where: { id: { in: deviceIds } },
         select: {
           id: true,
+          qty: true,
           state: true,
           codeSarpi: true,
           type: true,
@@ -135,28 +113,37 @@ export async function createTransfer(data: TransferFormData) {
         throw new Error("Un ou plusieurs matériels sont introuvables.");
       }
 
-      // Only devices in stock can be transferred
-       //in  FLASH_DISK ADAPTATEUR_WIFI  HARD_DISK_EXTERN  
-      // qty.transfert < qty.stock  it still on stock 
-      
-      const unavailableDevices = devices.filter(
-        (device) => device.state !== DeviceState.en_Stock
-      );
+      const deviceMap = new Map(devices.map((d) => [d.id, d]));
 
-      if (unavailableDevices.length > 0) {
-        const names = unavailableDevices
-          .map(
-            (device) =>
-              `${device.codeSarpi || device.id} - ${device.type} ${device.brand} ${device.model || ""} (${device.state})`
-          )
-          .join(", ");
+      // Check stock availability (requested quantity must not exceed device.qty)
+      for (const item of data.items) {
+        const device = deviceMap.get(Number(item.deviceId))!;
+        const requestedQty = Number(item.quantity);
 
-        throw new Error(
-          `Transfert impossible. Ces matériels ne sont pas en stock : ${names}`
-        );
+        if (device.qty < requestedQty) {
+          const deviceLabel = `${device.codeSarpi ? `[${device.codeSarpi}] ` : ""}${device.type} ${device.brand} ${device.model || ""}`.trim();
+          throw new Error(
+            `Quantité insuffisante pour "${deviceLabel}". Disponible: ${device.qty}, demandée: ${requestedQty}.`
+          );
+        }
       }
 
-      // Create transfer and items
+      // Deduct quantity and update state per device
+      for (const item of data.items) {
+        const device = deviceMap.get(Number(item.deviceId))!;
+        const requestedQty = Number(item.quantity);
+        const remainingQty = device.qty - requestedQty;
+
+        await tx.device.update({
+          where: { id: device.id },
+          data: {
+            qty: { decrement: requestedQty },
+            state: remainingQty > 0 ? DeviceState.en_Stock : DeviceState.Transfert,
+          },
+        });
+      }
+
+      // Create the transfer record with items
       const createdTransfer = await tx.transfer.create({
         data: {
           siteExpediteur: data.siteExpediteur.trim(),
@@ -183,20 +170,6 @@ export async function createTransfer(data: TransferFormData) {
         },
       });
 
-      // Mark devices as transferred
-
-      
-       // i will not update the state of is still on stock FLASH_DISK ADAPTATEUR_WIFI  HARD_DISK_EXTERN  
-      
-      await tx.device.updateMany({
-        where: {
-          id: { in: deviceIds },
-        },
-        data: {
-          state: DeviceState.Transfert,
-        },
-      });
-
       return createdTransfer;
     });
 
@@ -213,18 +186,15 @@ export async function createTransfer(data: TransferFormData) {
 
     return {
       success: false,
-      error:
-        error?.message ||
-        "Erreur lors de la création du transfert.",
+      error: error?.message || "Erreur lors de la création du transfert.",
     };
   }
 }
 
-// UPDATE
-export async function updateTransfer(
-  id: number,
-  data: TransferFormData
-) {
+// ----------------------------------------------------------------------
+// 2. UPDATE TRANSFER
+// ----------------------------------------------------------------------
+export async function updateTransfer(id: number, data: TransferFormData) {
   try {
     const validationError = validateTransferData(data);
 
@@ -236,15 +206,11 @@ export async function updateTransfer(
     }
 
     const transfer = await prisma.$transaction(async (tx) => {
-      // Verify that the transfer exists
+      // Find existing transfer and its current items
       const existingTransfer = await tx.transfer.findUnique({
         where: { id },
         include: {
-          items: {
-            select: {
-              deviceId: true,
-            },
-          },
+          items: true,
         },
       });
 
@@ -252,58 +218,80 @@ export async function updateTransfer(
         throw new Error("Transfert introuvable.");
       }
 
-      const oldDeviceIds = [
-        ...new Set(existingTransfer.items.map((item) => item.deviceId)),
+      const oldItemMap = new Map<number, number>();
+      for (const item of existingTransfer.items) {
+        oldItemMap.set(item.deviceId, item.quantity);
+      }
+
+      const newItemMap = new Map<number, number>();
+      for (const item of data.items) {
+        newItemMap.set(Number(item.deviceId), Number(item.quantity));
+      }
+
+      // Collect all affected device IDs (both previous and updated)
+      const allDeviceIds = [
+        ...new Set([...oldItemMap.keys(), ...newItemMap.keys()]),
       ];
 
-      const newDeviceIds = [
-        ...new Set(data.items.map((item) => Number(item.deviceId))),
-      ];
+      const devices = await tx.device.findMany({
+        where: { id: { in: allDeviceIds } },
+        select: {
+          id: true,
+          qty: true,
+          codeSarpi: true,
+          type: true,
+          brand: true,
+          model: true,
+        },
+      });
 
-      // Devices already included in this transfer can remain.
-      // Newly added devices must be in stock.
-      const addedDeviceIds = newDeviceIds.filter(
-        (deviceId) => !oldDeviceIds.includes(deviceId)
-      );
+      const deviceMap = new Map(devices.map((d) => [d.id, d]));
 
-      if (addedDeviceIds.length > 0) {
-        const addedDevices = await tx.device.findMany({
-          where: {
-            id: { in: addedDeviceIds },
-          },
-          select: {
-            id: true,
-            state: true,
-            codeSarpi: true,
-            type: true,
-            brand: true,
-            model: true,
-          },
-        });
-
-        if (addedDevices.length !== addedDeviceIds.length) {
+      // Verify that all stock adjustments are valid before making updates
+      for (const deviceId of allDeviceIds) {
+        const device = deviceMap.get(deviceId);
+        if (!device) {
           throw new Error("Un ou plusieurs matériels sont introuvables.");
         }
 
-        const unavailableDevices = addedDevices.filter(
-          (device) => device.state !== DeviceState.en_Stock
-        );
+        const oldQty = oldItemMap.get(deviceId) ?? 0;
+        const newQty = newItemMap.get(deviceId) ?? 0;
+        const delta = newQty - oldQty; // >0 means we need more stock, <0 means we restore stock
 
-        if (unavailableDevices.length > 0) {
-          const names = unavailableDevices
-            .map(
-              (device) =>
-                `${device.codeSarpi || device.id} - ${device.type} ${device.brand} ${device.model || ""} (${device.state})`
-            )
-            .join(", ");
-
+        if (delta > 0 && device.qty < delta) {
+          const deviceLabel = `${device.codeSarpi ? `[${device.codeSarpi}] ` : ""}${device.type} ${device.brand} ${device.model || ""}`.trim();
           throw new Error(
-            `Modification impossible. Ces matériels ne sont pas en stock : ${names}`
+            `Stock insuffisant pour "${deviceLabel}". Disponible: ${device.qty}, supplément demandé: ${delta}.`
           );
         }
       }
 
-      // Update transfer information
+      // Apply quantity changes and update device state
+      for (const deviceId of allDeviceIds) {
+        const device = deviceMap.get(deviceId)!;
+        const oldQty = oldItemMap.get(deviceId) ?? 0;
+        const newQty = newItemMap.get(deviceId) ?? 0;
+        const delta = newQty - oldQty;
+
+        if (delta !== 0) {
+          const updatedDevice = await tx.device.update({
+            where: { id: deviceId },
+            data: {
+              qty: { decrement: delta },
+            },
+            select: { qty: true },
+          });
+
+          await tx.device.update({
+            where: { id: deviceId },
+            data: {
+              state: updatedDevice.qty > 0 ? DeviceState.en_Stock : DeviceState.Transfert,
+            },
+          });
+        }
+      }
+
+      // Update transfer metadata
       const updatedTransfer = await tx.transfer.update({
         where: { id },
         data: {
@@ -318,7 +306,7 @@ export async function updateTransfer(
         },
       });
 
-      // Replace the transfer items
+      // Recreate transfer items
       await tx.transferItem.deleteMany({
         where: { transferId: id },
       });
@@ -330,15 +318,6 @@ export async function updateTransfer(
           quantity: Number(item.quantity),
         })),
       });
-
-      // Refresh the state of all affected devices
-      const affectedDeviceIds = [
-        ...new Set([...oldDeviceIds, ...newDeviceIds]),
-      ];
-
-      for (const deviceId of affectedDeviceIds) {
-        await refreshDeviceState(tx, deviceId);
-      }
 
       return updatedTransfer;
     });
@@ -356,36 +335,40 @@ export async function updateTransfer(
 
     return {
       success: false,
-      error:
-        error?.message ||
-        "Erreur lors de la modification du transfert.",
+      error: error?.message || "Erreur lors de la modification du transfert.",
     };
   }
 }
 
-// DELETE
+// ----------------------------------------------------------------------
+// 3. DELETE TRANSFER
+// ----------------------------------------------------------------------
 export async function deleteTransfer(id: number) {
   try {
     await prisma.$transaction(async (tx) => {
+      // Find items in the transfer to know how many to restore
       const items = await tx.transferItem.findMany({
         where: { transferId: id },
         select: {
           deviceId: true,
+          quantity: true,
         },
       });
 
-      const deviceIds = [
-        ...new Set(items.map((item) => item.deviceId)),
-      ];
-
+      // Delete the transfer record (and items cascade or get deleted)
       await tx.transfer.delete({
         where: { id },
       });
 
-      // Restore affected devices to stock unless another transfer
-      // still contains them.
-      for (const deviceId of deviceIds) {
-        await refreshDeviceState(tx, deviceId);
+      // Restore device quantities and return state to en_Stock
+      for (const item of items) {
+        await tx.device.update({
+          where: { id: item.deviceId },
+          data: {
+            qty: { increment: item.quantity },
+            state: DeviceState.en_Stock,
+          },
+        });
       }
     });
 
@@ -401,8 +384,7 @@ export async function deleteTransfer(id: number) {
 
     return {
       success: false,
-      error:
-        error?.message || "Erreur lors de la suppression du transfert.",
+      error: error?.message || "Erreur lors de la suppression du transfert.",
     };
   }
 }

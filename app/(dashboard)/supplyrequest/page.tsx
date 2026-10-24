@@ -1,6 +1,6 @@
-
 import { prisma } from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
+import { SupplyRequestStatus } from "@prisma/client";
 
 import AddEditSupplyRequestModal from "@/components/Modals/AddEditSupplyRequestModal";
 import Pagination from "@/components/Pagination";
@@ -26,6 +26,11 @@ export default async function SupplyRequestsPage({
   const page = Math.max(1, Number(params.page) || 1);
   const search = params.search?.trim() || "";
 
+  // Validate at runtime whether the search query matches a valid enum value
+  const isEnumStatus = Object.values(SupplyRequestStatus).includes(
+    search.toUpperCase() as SupplyRequestStatus
+  );
+
   const where = search
     ? {
         OR: [
@@ -48,17 +53,6 @@ export default async function SupplyRequestsPage({
             },
           },
           {
-            status: {
-              equals: search.toUpperCase() as
-                | "BROUILLON"
-                | "EN_ATTENTE"
-                | "APPROUVEE"
-                | "PARTIELLEMENT_APPROUVEE"
-                | "REJETEE"
-                | "LIVREE",
-            },
-          },
-          {
             items: {
               some: {
                 designation: {
@@ -78,20 +72,29 @@ export default async function SupplyRequestsPage({
               },
             },
           },
+          // Only add the status filter if the search string is actually a valid enum member
+          ...(isEnumStatus
+            ? [
+                {
+                  status: {
+                    equals: search.toUpperCase() as SupplyRequestStatus,
+                  },
+                },
+              ]
+            : []),
         ],
       }
     : {};
 
   const columns = [
-   
-    { header: "N° Demande", accessor: "requestNumber" ,className: "px-6   text-left  border-b-1 border-black " },
-    { header: "Objet", accessor: "purpose" ,className: "px-6  text-left  border-b-1 border-black " },
-    { header: "Date Demande", accessor: "requestDate" ,className: "px-6  text-left  border-b-1 border-black " },
-    { header: "Échéance Souhaitée", accessor: "desiredDeadline" ,className: "px-6  text-left  border-b-1 border-black " },
-    { header: "Statut", accessor: "status" ,className: "px-6  text-left  border-b-1 border-black " },
-    { header: "Articles", accessor: "items" ,className: "px-6  text-left  border-b-1 border-black " },
-    { header: "Note", accessor: "note" ,className: "px-6  text-left  border-b-1 border-black " },
-    { header: "Actions", accessor: "action" ,className: "px-6  text-left  border-b-1 border-black " },
+    { header: "N° Demande", accessor: "requestNumber", className: "px-6 text-left border-b-1 border-black" },
+    { header: "Objet", accessor: "purpose", className: "px-6 text-left border-b-1 border-black" },
+    { header: "Date Demande", accessor: "requestDate", className: "px-6 text-left border-b-1 border-black" },
+    { header: "Échéance Souhaitée", accessor: "desiredDeadline", className: "px-6 text-left border-b-1 border-black" },
+    { header: "Statut", accessor: "status", className: "px-6 text-left border-b-1 border-black" },
+    { header: "Articles", accessor: "items", className: "px-6 text-left border-b-1 border-black" },
+    { header: "Note", accessor: "note", className: "px-6 text-left border-b-1 border-black" },
+    { header: "Actions", accessor: "action", className: "px-6 text-left border-b-1 border-black" },
   ];
 
   const [supplyRequests, count] = await prisma.$transaction([
@@ -138,14 +141,15 @@ export default async function SupplyRequestsPage({
   };
 
   const renderRow = (
-    request: (typeof supplyRequests)[number],index: number
+    request: (typeof supplyRequests)[number],
+    index: number
   ) => (
     <tr
       key={request.id}
       className="border-b border-gray-200 text-sm hover:bg-slate-50"
     >
-      {/* ID */}
-      <td className="px-6 py-4">{index + 1}</td>
+      {/* Index calculation with pagination */}
+      <td className="px-6 py-4">{ITEM_PER_PAGE * (page - 1) + index + 1}</td>
 
       {/* Request Number */}
       <td className="px-6 py-4 font-medium whitespace-nowrap">
@@ -267,7 +271,6 @@ export default async function SupplyRequestsPage({
 
             <div className="flex flex-1 items-center justify-end gap-2">
               <TableSearch />
-
               <AddEditSupplyRequestModal />
             </div>
           </div>

@@ -21,7 +21,7 @@ export default async function DashboardLayout({
           role={user.role}
         />
 
-        <div className="py-2 ">
+        <div className=" ">
           {children}
         </div>
       </main>

@@ -308,17 +308,9 @@ export default async function DevicesPage({
   return (
     <main className="min-h-screen bg-slate-50 p-8">
       <div className="mx-auto max-w-8xl">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Devices</h1>
+       
 
-            <p className="mt-2 text-slate-500">
-              Manage SARPI IT equipment inventory.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-8 overflow-hidden rounded-xl bg-white shadow-sm">
+        <div className=" overflow-hidden rounded-xl bg-white shadow-sm">
           <div className="flex items-center justify-between gap-4 border-b p-4">
              <div>
                 <h2 className="text-lg font-semibold">

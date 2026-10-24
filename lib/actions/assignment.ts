@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { DeviceState, DeviceType, AssignmentCondition, Block } from "@prisma/client";
+import { DeviceState, AssignmentCondition, Block } from "@prisma/client";
 
 export interface AssignmentFormData {
   deviceId: number;
@@ -17,16 +17,6 @@ export interface AssignmentFormData {
   qty: number;
 }
 
-const BULK_DEVICE_TYPES: DeviceType[] = [
-  DeviceType.FLASH_DISK,
-  DeviceType.ADAPTATEUR_WIFI,
-  DeviceType.HARD_DISK_EXTERN,
-];
-
-function isBulkDevice(type: DeviceType): boolean {
-  return BULK_DEVICE_TYPES.includes(type);
-}
-
 // ----------------------------------------------------------------------
 // 1. CREATE ASSIGNMENT
 // ----------------------------------------------------------------------
@@ -35,11 +25,11 @@ export async function createAssignment(data: AssignmentFormData) {
     const requestedQty = data.qty && data.qty > 0 ? Number(data.qty) : 1;
 
     const assignment = await prisma.$transaction(async (tx) => {
+      // 1. Verify device exists and check stock
       const device = await tx.device.findUnique({
         where: { id: data.deviceId },
         select: {
           id: true,
-          type: true,
           state: true,
           qty: true,
         },
@@ -49,40 +39,27 @@ export async function createAssignment(data: AssignmentFormData) {
         throw new Error("DEVICE_NOT_FOUND");
       }
 
-      const isBulk = isBulkDevice(device.type);
-
-      if (isBulk) {
-        if (device.qty < requestedQty) {
-          throw new Error("INSUFFICIENT_STOCK");
-        }
-
-        const remainingQty = device.qty - requestedQty;
-
-        await tx.device.update({
-          where: { id: device.id },
-          data: {
-            qty: { decrement: requestedQty },
-            state: remainingQty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
-          },
-        });
-      } else {
-        if (device.state !== DeviceState.en_Stock) {
-          throw new Error("DEVICE_NOT_IN_STOCK");
-        }
-
-        await tx.device.update({
-          where: { id: device.id },
-          data: {
-            state: DeviceState.en_Service,
-          },
-        });
+      if (device.qty < requestedQty) {
+        throw new Error("INSUFFICIENT_STOCK");
       }
 
+      const remainingQty = device.qty - requestedQty;
+
+      // 2. Decrement device stock and adjust state
+      await tx.device.update({
+        where: { id: device.id },
+        data: {
+          qty: { decrement: requestedQty },
+          state: remainingQty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
+        },
+      });
+
+      // 3. Create assignment record
       const newAssignment = await tx.assignment.create({
         data: {
           deviceId: data.deviceId,
           employeeId: data.employeeId,
-          qty: isBulk ? requestedQty : 1,
+          qty: requestedQty,
           bureau: data.bureau || null,
           block: (data.block as Block) || null,
           hostName: data.hostName || null,
@@ -111,9 +88,6 @@ export async function createAssignment(data: AssignmentFormData) {
       if (error.message === "INSUFFICIENT_STOCK") {
         return { success: false, error: "Insufficient quantity available in stock." };
       }
-      if (error.message === "DEVICE_NOT_IN_STOCK") {
-        return { success: false, error: "Assignment not allowed: device is not in stock." };
-      }
     }
 
     return { success: false, error: "Failed to create assignment." };
@@ -126,6 +100,7 @@ export async function createAssignment(data: AssignmentFormData) {
 export async function updateAssignment(id: number, data: AssignmentFormData) {
   try {
     const assignment = await prisma.$transaction(async (tx) => {
+      // 1. Fetch existing assignment with device details
       const existing = await tx.assignment.findUnique({
         where: { id },
         include: { device: true },
@@ -136,66 +111,61 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
       }
 
       const returnedAt = data.returnedAt ? new Date(data.returnedAt) : null;
-      const isBulk = isBulkDevice(existing.device.type);
-      const newQty = isBulk ? (data.qty && data.qty > 0 ? Number(data.qty) : 1) : 1;
+      const newQty = data.qty && data.qty > 0 ? Number(data.qty) : 1;
       const oldQty = existing.qty;
 
-      if (isBulk) {
-        const wasReturned = Boolean(existing.returnedAt);
-        const isNowReturned = Boolean(returnedAt);
+      const wasReturned = Boolean(existing.returnedAt);
+      const isNowReturned = Boolean(returnedAt);
 
-        if (!wasReturned && isNowReturned) {
-          await tx.device.update({
-            where: { id: existing.deviceId },
-            data: {
-              qty: { increment: oldQty },
-              state: DeviceState.en_Stock,
-            },
-          });
-        } else if (wasReturned && !isNowReturned) {
-          if (existing.device.qty < newQty) {
-            throw new Error("INSUFFICIENT_STOCK");
-          }
-
-          const remainingQty = existing.device.qty - newQty;
-          await tx.device.update({
-            where: { id: existing.deviceId },
-            data: {
-              qty: { decrement: newQty },
-              state: remainingQty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
-            },
-          });
-        } else if (!wasReturned && !isNowReturned) {
-          const qtyDelta = newQty - oldQty;
-
-          if (qtyDelta > 0 && existing.device.qty < qtyDelta) {
-            throw new Error("INSUFFICIENT_STOCK");
-          }
-
-          const updatedDevice = await tx.device.update({
-            where: { id: existing.deviceId },
-            data: {
-              qty: { decrement: qtyDelta },
-            },
-            select: { qty: true },
-          });
-
-          await tx.device.update({
-            where: { id: existing.deviceId },
-            data: {
-              state: updatedDevice.qty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
-            },
-          });
-        }
-      } else {
+      // 2. Manage stock restoration or deduction across all devices
+      if (!wasReturned && isNowReturned) {
+        // Device returned: return assigned quantity back to inventory
         await tx.device.update({
-          where: { id: data.deviceId },
+          where: { id: existing.deviceId },
           data: {
-            state: returnedAt ? DeviceState.en_Stock : DeviceState.en_Service,
+            qty: { increment: oldQty },
+            state: DeviceState.en_Stock,
+          },
+        });
+      } else if (wasReturned && !isNowReturned) {
+        // Re-activated assignment: deduct new quantity from inventory
+        if (existing.device.qty < newQty) {
+          throw new Error("INSUFFICIENT_STOCK");
+        }
+
+        const remainingQty = existing.device.qty - newQty;
+        await tx.device.update({
+          where: { id: existing.deviceId },
+          data: {
+            qty: { decrement: newQty },
+            state: remainingQty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
+          },
+        });
+      } else if (!wasReturned && !isNowReturned) {
+        // Still active: adjust inventory by the delta
+        const qtyDelta = newQty - oldQty;
+
+        if (qtyDelta > 0 && existing.device.qty < qtyDelta) {
+          throw new Error("INSUFFICIENT_STOCK");
+        }
+
+        const updatedDevice = await tx.device.update({
+          where: { id: existing.deviceId },
+          data: {
+            qty: { decrement: qtyDelta },
+          },
+          select: { qty: true },
+        });
+
+        await tx.device.update({
+          where: { id: existing.deviceId },
+          data: {
+            state: updatedDevice.qty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
           },
         });
       }
 
+      // 3. Update assignment record
       const updatedAssignment = await tx.assignment.update({
         where: { id },
         data: {
@@ -242,47 +212,29 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
 export async function deleteAssignment(id: number) {
   try {
     await prisma.$transaction(async (tx) => {
+      // 1. Fetch assignment to check quantity and return status
       const assignment = await tx.assignment.findUnique({
         where: { id },
-        include: { device: true },
       });
 
       if (!assignment) {
         throw new Error("ASSIGNMENT_NOT_FOUND");
       }
 
-      const isBulk = isBulkDevice(assignment.device.type);
-
+      // 2. Delete the assignment
       await tx.assignment.delete({
         where: { id },
       });
 
-      if (isBulk) {
-        if (!assignment.returnedAt) {
-          await tx.device.update({
-            where: { id: assignment.deviceId },
-            data: {
-              qty: { increment: assignment.qty },
-              state: DeviceState.en_Stock,
-            },
-          });
-        }
-      } else {
-        const remainingActiveAssignments = await tx.assignment.count({
-          where: {
-            deviceId: assignment.deviceId,
-            returnedAt: null,
+      // 3. Return quantity to inventory if it was not already marked returned
+      if (!assignment.returnedAt) {
+        await tx.device.update({
+          where: { id: assignment.deviceId },
+          data: {
+            qty: { increment: assignment.qty },
+            state: DeviceState.en_Stock,
           },
         });
-
-        if (remainingActiveAssignments === 0) {
-          await tx.device.update({
-            where: { id: assignment.deviceId },
-            data: {
-              state: DeviceState.en_Stock,
-            },
-          });
-        }
       }
     });
 

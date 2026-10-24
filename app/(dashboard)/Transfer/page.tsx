@@ -1,6 +1,6 @@
-
 import { prisma } from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
+import { MaterialNature } from "@prisma/client";
 
 import AddEditTransferModal from "@/components/Modals/AddEditTransferModal";
 import Pagination from "@/components/Pagination";
@@ -24,8 +24,12 @@ export default async function TransfersPage({
   const params = await searchParams;
 
   const page = Math.max(1, Number(params.page) || 1);
-
   const search = params.search?.trim() || "";
+
+  // Check if search query matches any MaterialNature enum value
+  const isEnumNature = Object.values(MaterialNature).includes(
+    search.toUpperCase() as MaterialNature
+  );
 
   const where = search
     ? {
@@ -48,31 +52,64 @@ export default async function TransfersPage({
               mode: "insensitive" as const,
             },
           },
+          // Search in linked device details
           {
-            nature: {
-              equals: search as any,
+            items: {
+              some: {
+                device: {
+                  OR: [
+                    {
+                      codeSarpi: {
+                        contains: search,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                    {
+                      brand: {
+                        contains: search,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                    {
+                      model: {
+                        contains: search,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                  ],
+                },
+              },
             },
           },
+          // Only filter by nature if the search string is actually a valid enum value
+          ...(isEnumNature
+            ? [
+                {
+                  nature: {
+                    equals: search.toUpperCase() as MaterialNature,
+                  },
+                },
+              ]
+            : []),
         ],
       }
     : {};
 
   const columns = [
-    
-    { header: "Expéditeur", accessor: "siteExpediteur", className: "px-6 py-2  text-left  border-b-1 border-black" },
-    { header: "Date Expédition", accessor: "dateExpediteur", className: "px-6 py-2  text-left  border-b-1 border-black" },
-    { header: "Destinataire", accessor: "siteDestinataire", className: "px-6 py-2  text-left  border-b-1 border-black" },
-    { header: "Date Réception", accessor: "dateDestinataire", className: "px-6 py-2  text-left  border-b-1 border-black" },
-    { header: "Nature", accessor: "nature", className: "px-6 py-2  text-left  border-b-1 border-black" },
-    { header: "Matériels", accessor: "items", className: "px-6 py-2  text-left  border-b-1 border-black" },
-    { header: "Note", accessor: "note", className: "px-6 py-2  text-left  border-b-1 border-black" },
-    { header: "Action", accessor: "action", className: "px-6 py-2  text-left  border-b-1 border-black" },
+    { header: "#", accessor: "index", className: "px-6 py-2 text-left border-b-1 border-black" },
+    { header: "Expéditeur", accessor: "siteExpediteur", className: "px-6 py-2 text-left border-b-1 border-black" },
+    { header: "Date Expédition", accessor: "dateExpediteur", className: "px-6 py-2 text-left border-b-1 border-black" },
+    { header: "Destinataire", accessor: "siteDestinataire", className: "px-6 py-2 text-left border-b-1 border-black" },
+    { header: "Date Réception", accessor: "dateDestinataire", className: "px-6 py-2 text-left border-b-1 border-black" },
+    { header: "Nature", accessor: "nature", className: "px-6 py-2 text-left border-b-1 border-black" },
+    { header: "Matériels", accessor: "items", className: "px-6 py-2 text-left border-b-1 border-black" },
+    { header: "Note", accessor: "note", className: "px-6 py-2 text-left border-b-1 border-black" },
+    { header: "Action", accessor: "action", className: "px-6 py-2 text-left border-b-1 border-black" },
   ];
 
   const [transfers, count] = await prisma.$transaction([
     prisma.transfer.findMany({
       where,
-
       include: {
         items: {
           include: {
@@ -80,71 +117,56 @@ export default async function TransfersPage({
           },
         },
       },
-
       orderBy: {
         dateExpediteur: "desc",
       },
-
       skip: ITEM_PER_PAGE * (page - 1),
       take: ITEM_PER_PAGE,
     }),
-
     prisma.transfer.count({
       where,
     }),
   ]);
 
-  const renderRow = (transfer: (typeof transfers)[number],index: number) => (
+  const renderRow = (transfer: (typeof transfers)[number], index: number) => (
     <tr
       key={transfer.id}
       className="border-b border-gray-200 text-sm hover:bg-slate-50"
     >
-      {/* ID */}
-
-       <td className="px-6 py-4 font-medium">
-        {index + 1}
+      <td className="px-6 py-4 font-medium">
+        {ITEM_PER_PAGE * (page - 1) + index + 1}
       </td>
-     
 
-      {/* Site Expéditeur */}
       <td className="px-6 py-4 font-medium">
         {transfer.siteExpediteur}
       </td>
 
-      {/* Date Expédition */}
       <td className="px-6 py-4">
         {new Date(transfer.dateExpediteur).toLocaleDateString("fr-FR")}
       </td>
 
-      {/* Site Destinataire */}
       <td className="px-6 py-4">
         {transfer.siteDestinataire}
       </td>
 
-      {/* Date Destinataire */}
       <td className="px-6 py-4">
         {transfer.dateDestinataire
-          ? new Date(
-              transfer.dateDestinataire
-            ).toLocaleDateString("fr-FR")
+          ? new Date(transfer.dateDestinataire).toLocaleDateString("fr-FR")
           : "-"}
       </td>
 
-      {/* Nature */}
       <td className="px-6 py-4">
         {transfer.nature}
       </td>
 
-      {/* Devices */}
       <td className="px-6 py-4">
         <div className="space-y-1">
           {transfer.items.length > 0 ? (
             transfer.items.map((item) => (
               <div key={item.id}>
                 <span className="font-medium">
-                  {item.device.type}
+                  {item.device.type.replaceAll("_", " ")}
                 </span>
-
                 <span className="ml-2 text-slate-500">
                   x{item.quantity}
                 </span>
@@ -156,29 +178,19 @@ export default async function TransfersPage({
         </div>
       </td>
 
-      {/* Note */}
       <td className="px-6 py-4">
         {transfer.note || "-"}
       </td>
 
-      {/* Actions */}
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-
-          <AddEditTransferModal
-            transfer={transfer}
-          />
-
+          <AddEditTransferModal transfer={transfer} />
           <DeleteButton
             id={transfer.id}
             itemName="transfer"
             deleteAction={deleteTransfer}
           />
-
-          <PrintTransferButton
-            transferId={transfer.id}
-          />
-
+          <PrintTransferButton transferId={transfer.id} />
         </div>
       </td>
     </tr>
@@ -187,14 +199,10 @@ export default async function TransfersPage({
   return (
     <main className="min-h-screen bg-slate-50 p-8">
       <div className="mx-auto max-w-8xl">
-
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">
-              Transfers
-            </h1>
-
+            <h1 className="text-3xl font-bold">Transfers</h1>
             <p className="mt-2 text-slate-500">
               Manage IT equipment transfers between sites.
             </p>
@@ -203,24 +211,16 @@ export default async function TransfersPage({
 
         {/* Transfers Card */}
         <div className="mt-8 overflow-hidden rounded-xl bg-white shadow-sm">
-
           {/* Header */}
           <div className="flex items-center justify-between border-b p-4">
-
             <div>
-              <h1 className="text-lg font-semibold">
-                Transfers List
-              </h1>
+              <h1 className="text-lg font-semibold">Transfers List</h1>
             </div>
 
             <div className="flex flex-1 items-center justify-end gap-2">
-
               <TableSearch />
-
               <AddEditTransferModal />
-
             </div>
-
           </div>
 
           {/* Table */}
@@ -231,17 +231,11 @@ export default async function TransfersPage({
               data={transfers}
             />
           </div>
-
         </div>
 
         {/* Pagination */}
-        <Pagination
-          page={page}
-          count={count}
-        />
-
+        <Pagination page={page} count={count} />
       </div>
     </main>
   );
 }
-
