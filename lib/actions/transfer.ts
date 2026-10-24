@@ -136,6 +136,9 @@ export async function createTransfer(data: TransferFormData) {
       }
 
       // Only devices in stock can be transferred
+       //in  FLASH_DISK ADAPTATEUR_WIFI  HARD_DISK_EXTERN  
+      // qty.transfert < qty.stock  it still on stock 
+      
       const unavailableDevices = devices.filter(
         (device) => device.state !== DeviceState.en_Stock
       );
@@ -181,6 +184,10 @@ export async function createTransfer(data: TransferFormData) {
       });
 
       // Mark devices as transferred
+
+      
+       // i will not update the state of is still on stock FLASH_DISK ADAPTATEUR_WIFI  HARD_DISK_EXTERN  
+      
       await tx.device.updateMany({
         where: {
           id: { in: deviceIds },

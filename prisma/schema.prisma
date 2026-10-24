@@ -16,9 +16,11 @@ enum DeviceType {
   POINT_ACCES
   SWITCH
   HARD_DISK
-  FLASH_DISK
   TONER
   BATTERIE
+  FLASH_DISK
+  ADAPTATEUR_WIFI
+  HARD_DISK_EXTERN
 }
 
 enum DeviceCondition {
@@ -87,7 +89,7 @@ model Employee {
 
 model Device {
   id           Int             @id @default(autoincrement())
-  codeSarpi    String? @unique
+  codeSarpi    String? 
   serialNumber String?         @unique
   type         DeviceType
   brand        String

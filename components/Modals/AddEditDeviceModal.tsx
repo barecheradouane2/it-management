@@ -141,7 +141,7 @@ export default function AddEditDeviceModal({
           : "Device added successfully!"
       );
 
-      setOpen(false);
+      // setOpen(false);
       reset(EMPTY_FORM);
       onSuccess?.();
     } catch (error) {

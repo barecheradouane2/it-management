@@ -19,6 +19,8 @@ type DeviceOption = {
   codeSarpi: string | null;
   brand: string;
   model: string | null;
+  state:string,
+  qty:number
   
 };
 
@@ -131,6 +133,12 @@ export default function AddEditAssignmentModal({
         : { ...emptyValues }
     );
   };
+
+ if (!isEdit) {
+  devices = devices.filter(
+    (device) => device.state === "en_Stock" && device.qty > 0
+  );
+}
 
   const onSubmit = async (data: AssignmentFormData) => {
     try {

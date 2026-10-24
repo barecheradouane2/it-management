@@ -374,7 +374,7 @@ export async function GET(
       });
 
       page.drawText(
-        `                  affecté à                                                         déclare avoir reçus le  ${today}`,
+        `                                              affecté à                          déclare avoir reçus le  ${today}`,
         {
           x: 150,
           y,

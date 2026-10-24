@@ -41,6 +41,11 @@ export async function createAssignment(data: AssignmentFormData) {
         throw new Error("DEVICE_NOT_FOUND");
       }
 
+      // FLASH_DISK ADAPTATEUR_WIFI  HARD_DISK_EXTERN  
+      // qty.assigment < qty.stock  it still on stock 
+      // return true ..
+      
+
       // 2. Allow assignment only if the device is in stock
       if (device.state !== DeviceState.en_Stock) {
         throw new Error("DEVICE_NOT_IN_STOCK");
@@ -134,6 +139,10 @@ export async function updateAssignment(
       const returnedAt = data.returnedAt
         ? new Date(data.returnedAt)
         : null;
+
+         // FLASH_DISK ADAPTATEUR_WIFI  HARD_DISK_EXTERN  
+      // check  qty.assigment < qty.stock  it still on stock 
+      // return true ..
 
       // 3. Update the assignment
       const updatedAssignment = await tx.assignment.update({
@@ -232,6 +241,8 @@ export async function deleteAssignment(id: number) {
       });
 
       // Return the device to stock if no assignments remain
+      //  // FLASH_DISK ADAPTATEUR_WIFI  HARD_DISK_EXTERN   qty.stock+=qty.assigment
+     
       if (remainingAssignments === 0) {
         await tx.device.update({
           where: {
