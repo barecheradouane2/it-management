@@ -13,7 +13,8 @@ import {
   Settings,
   Van,
   FileText ,
-  WalletCards 
+  WalletCards ,
+  LockKeyholeOpen  
 } from "lucide-react";
 
 const navigation = [
@@ -51,6 +52,11 @@ const navigation = [
     name: "Consumption",
     href:"/consumption",
     icon:WalletCards
+  },
+  {
+    name:"Mot Passe",
+    href:"/networkdevice",
+    icon:LockKeyholeOpen
   }
 ];
 

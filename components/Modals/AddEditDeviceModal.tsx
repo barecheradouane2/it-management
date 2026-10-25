@@ -20,7 +20,7 @@ type Device = {
   brand: string;
   model: string | null;
   arrivalDate: Date | string | null;
-  siteProject: string | null;
+  location: string | null;
   condition: DeviceFormData["condition"];
   qty: number;
   state: DeviceFormData["state"];
@@ -71,7 +71,7 @@ const EMPTY_FORM: DeviceFormData = {
   brand: "",
   model: "",
   arrivalDate: "",
-  siteProject: "",
+  location: "",
   condition: "NEUF",
   qty: 1,
   state: "en_Stock",
@@ -103,7 +103,7 @@ export default function AddEditDeviceModal({
     arrivalDate: item.arrivalDate
       ? new Date(item.arrivalDate).toISOString().slice(0, 10)
       : "",
-    siteProject: item.siteProject ?? "",
+    location: item.location ?? "",
     condition: item.condition,
     qty: item.qty ?? 1,
     state: item.state,
@@ -332,12 +332,12 @@ export default function AddEditDeviceModal({
                 {/* Site / Project */}
                 <div>
                   <label className={labelClass}>
-                    Site / Project
+                   location
                   </label>
 
                   <input
-                    placeholder="Enter site or project"
-                    {...register("siteProject")}
+                    placeholder="location"
+                    {...register("location")}
                     className={inputClass}
                   />
                 </div>

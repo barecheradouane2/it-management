@@ -7,7 +7,7 @@ import { DeviceState, AssignmentCondition, Block } from "@prisma/client";
 export interface AssignmentFormData {
   deviceId: number;
   employeeId: number;
-  bureau?: string | null;
+  location?: string | null; // Updates Device.location
   block?: Block | string | null;
   hostName?: string | null;
   condition: AssignmentCondition;
@@ -45,22 +45,22 @@ export async function createAssignment(data: AssignmentFormData) {
 
       const remainingQty = device.qty - requestedQty;
 
-      // 2. Decrement device stock and adjust state
+      // 2. Decrement device stock, set state, and update device location
       await tx.device.update({
         where: { id: device.id },
         data: {
           qty: { decrement: requestedQty },
           state: remainingQty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
+          location: data.location?.trim() || null,
         },
       });
 
-      // 3. Create assignment record
+      // 3. Create assignment record without bureau
       const newAssignment = await tx.assignment.create({
         data: {
           deviceId: data.deviceId,
           employeeId: data.employeeId,
           qty: requestedQty,
-          bureau: data.bureau || null,
           block: (data.block as Block) || null,
           hostName: data.hostName || null,
           condition: data.condition || AssignmentCondition.NEUF,
@@ -117,7 +117,7 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
       const wasReturned = Boolean(existing.returnedAt);
       const isNowReturned = Boolean(returnedAt);
 
-      // 2. Manage stock restoration or deduction across all devices
+      // 2. Manage stock restoration or deduction across devices
       if (!wasReturned && isNowReturned) {
         // Device returned: return assigned quantity back to inventory
         await tx.device.update({
@@ -125,6 +125,7 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
           data: {
             qty: { increment: oldQty },
             state: DeviceState.en_Stock,
+            location: data.location?.trim() || null,
           },
         });
       } else if (wasReturned && !isNowReturned) {
@@ -139,6 +140,7 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
           data: {
             qty: { decrement: newQty },
             state: remainingQty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
+            location: data.location?.trim() || null,
           },
         });
       } else if (!wasReturned && !isNowReturned) {
@@ -153,6 +155,7 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
           where: { id: existing.deviceId },
           data: {
             qty: { decrement: qtyDelta },
+            location: data.location?.trim() || null,
           },
           select: { qty: true },
         });
@@ -161,6 +164,14 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
           where: { id: existing.deviceId },
           data: {
             state: updatedDevice.qty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
+          },
+        });
+      } else {
+        // Both were returned; update location only
+        await tx.device.update({
+          where: { id: existing.deviceId },
+          data: {
+            location: data.location?.trim() || null,
           },
         });
       }
@@ -172,7 +183,6 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
           deviceId: data.deviceId,
           employeeId: data.employeeId,
           qty: newQty,
-          bureau: data.bureau || null,
           block: (data.block as Block) || null,
           hostName: data.hostName || null,
           condition: data.condition,
@@ -212,7 +222,6 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
 export async function deleteAssignment(id: number) {
   try {
     await prisma.$transaction(async (tx) => {
-      // 1. Fetch assignment to check quantity and return status
       const assignment = await tx.assignment.findUnique({
         where: { id },
       });
@@ -221,18 +230,18 @@ export async function deleteAssignment(id: number) {
         throw new Error("ASSIGNMENT_NOT_FOUND");
       }
 
-      // 2. Delete the assignment
       await tx.assignment.delete({
         where: { id },
       });
 
-      // 3. Return quantity to inventory if it was not already marked returned
       if (!assignment.returnedAt) {
         await tx.device.update({
           where: { id: assignment.deviceId },
           data: {
             qty: { increment: assignment.qty },
             state: DeviceState.en_Stock,
+            location:null
+           
           },
         });
       }

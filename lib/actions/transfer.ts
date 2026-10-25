@@ -102,6 +102,7 @@ export async function createTransfer(data: TransferFormData) {
           id: true,
           qty: true,
           state: true,
+          location: true,
           codeSarpi: true,
           type: true,
           brand: true,
@@ -115,7 +116,7 @@ export async function createTransfer(data: TransferFormData) {
 
       const deviceMap = new Map(devices.map((d) => [d.id, d]));
 
-      // Check stock availability (requested quantity must not exceed device.qty)
+      // Check stock availability
       for (const item of data.items) {
         const device = deviceMap.get(Number(item.deviceId))!;
         const requestedQty = Number(item.quantity);
@@ -128,17 +129,20 @@ export async function createTransfer(data: TransferFormData) {
         }
       }
 
-      // Deduct quantity and update state per device
+      // Deduct quantity and update state/location per device
       for (const item of data.items) {
         const device = deviceMap.get(Number(item.deviceId))!;
         const requestedQty = Number(item.quantity);
         const remainingQty = device.qty - requestedQty;
+        const newLocation = `Projet / ${data.siteDestinataire.trim()}`;
 
         await tx.device.update({
           where: { id: device.id },
           data: {
             qty: { decrement: requestedQty },
             state: remainingQty > 0 ? DeviceState.en_Stock : DeviceState.Transfert,
+            // Only reassign location to project destination if all units are dispatched
+            location: remainingQty <= 0 ? newLocation : device.location,
           },
         });
       }
@@ -228,7 +232,6 @@ export async function updateTransfer(id: number, data: TransferFormData) {
         newItemMap.set(Number(item.deviceId), Number(item.quantity));
       }
 
-      // Collect all affected device IDs (both previous and updated)
       const allDeviceIds = [
         ...new Set([...oldItemMap.keys(), ...newItemMap.keys()]),
       ];
@@ -238,6 +241,7 @@ export async function updateTransfer(id: number, data: TransferFormData) {
         select: {
           id: true,
           qty: true,
+          location: true,
           codeSarpi: true,
           type: true,
           brand: true,
@@ -247,7 +251,7 @@ export async function updateTransfer(id: number, data: TransferFormData) {
 
       const deviceMap = new Map(devices.map((d) => [d.id, d]));
 
-      // Verify that all stock adjustments are valid before making updates
+      // Verify stock adjustments
       for (const deviceId of allDeviceIds) {
         const device = deviceMap.get(deviceId);
         if (!device) {
@@ -256,7 +260,7 @@ export async function updateTransfer(id: number, data: TransferFormData) {
 
         const oldQty = oldItemMap.get(deviceId) ?? 0;
         const newQty = newItemMap.get(deviceId) ?? 0;
-        const delta = newQty - oldQty; // >0 means we need more stock, <0 means we restore stock
+        const delta = newQty - oldQty;
 
         if (delta > 0 && device.qty < delta) {
           const deviceLabel = `${device.codeSarpi ? `[${device.codeSarpi}] ` : ""}${device.type} ${device.brand} ${device.model || ""}`.trim();
@@ -266,26 +270,23 @@ export async function updateTransfer(id: number, data: TransferFormData) {
         }
       }
 
-      // Apply quantity changes and update device state
+      // Apply quantity adjustments and update location in a single pass
       for (const deviceId of allDeviceIds) {
         const device = deviceMap.get(deviceId)!;
         const oldQty = oldItemMap.get(deviceId) ?? 0;
         const newQty = newItemMap.get(deviceId) ?? 0;
         const delta = newQty - oldQty;
+        const targetLocation = `Projet / ${data.siteDestinataire.trim()}`;
 
         if (delta !== 0) {
-          const updatedDevice = await tx.device.update({
-            where: { id: deviceId },
-            data: {
-              qty: { decrement: delta },
-            },
-            select: { qty: true },
-          });
+          const expectedRemaining = device.qty - delta;
 
           await tx.device.update({
             where: { id: deviceId },
             data: {
-              state: updatedDevice.qty > 0 ? DeviceState.en_Stock : DeviceState.Transfert,
+              qty: { decrement: delta },
+              state: expectedRemaining > 0 ? DeviceState.en_Stock : DeviceState.Transfert,
+              location: expectedRemaining <= 0 ? targetLocation : device.location,
             },
           });
         }
@@ -346,7 +347,7 @@ export async function updateTransfer(id: number, data: TransferFormData) {
 export async function deleteTransfer(id: number) {
   try {
     await prisma.$transaction(async (tx) => {
-      // Find items in the transfer to know how many to restore
+      // Find items to restore
       const items = await tx.transferItem.findMany({
         where: { transferId: id },
         select: {
@@ -355,7 +356,7 @@ export async function deleteTransfer(id: number) {
         },
       });
 
-      // Delete the transfer record (and items cascade or get deleted)
+      // Delete the transfer record
       await tx.transfer.delete({
         where: { id },
       });
@@ -367,6 +368,7 @@ export async function deleteTransfer(id: number) {
           data: {
             qty: { increment: item.quantity },
             state: DeviceState.en_Stock,
+            location: null,
           },
         });
       }

@@ -26,6 +26,7 @@ type DeviceOption = {
   model: string | null;
   state: string;
   qty: number;
+  location?: string | null;
   type: DeviceType;
 };
 
@@ -38,7 +39,9 @@ type Assignment = {
   id: number;
   deviceId: number;
   employeeId: number;
-  bureau: string | null;
+  device?: {
+    location?: string | null;
+  };
   block: Block | null;
   hostName: string | null;
   condition: AssignmentCondition;
@@ -68,7 +71,7 @@ const conditions = ["NEUF", "EN_PANNE", "ANCIEN"] as const;
 const emptyValues: AssignmentFormData = {
   deviceId: 0,
   employeeId: 0,
-  bureau: "",
+  location: "",
   block: "",
   hostName: "",
   condition: "NEUF",
@@ -125,6 +128,13 @@ export default function AddEditAssignmentModal({
     }
   }, [isBulk, setValue]);
 
+  // Pre-fill location if the selected device already has one registered
+  useEffect(() => {
+    if (selectedDevice && !isEdit) {
+      setValue("location", selectedDevice.location ?? "");
+    }
+  }, [selectedDevice, isEdit, setValue]);
+
   const availableDevices = useMemo(() => {
     if (isEdit) return devices;
     return devices.filter(
@@ -135,7 +145,7 @@ export default function AddEditAssignmentModal({
   const getAssignmentValues = (item: Assignment): AssignmentFormData => ({
     deviceId: item.deviceId,
     employeeId: item.employeeId,
-    bureau: item.bureau ?? "",
+    location: item.device?.location ?? "",
     block: item.block ?? "",
     hostName: item.hostName ?? "",
     condition: item.condition,
@@ -171,6 +181,7 @@ export default function AddEditAssignmentModal({
     try {
       const payload: AssignmentFormData = {
         ...data,
+        location: data.location?.trim() || null,
         qty: isBulk ? Number(data.qty) || 1 : 1,
       };
 
@@ -198,7 +209,7 @@ export default function AddEditAssignmentModal({
   };
 
   const inputClass =
-    "w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed";
+    "w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed text-sm";
 
   const labelClass =
     "mb-2 block text-left text-sm font-medium text-slate-700";
@@ -350,19 +361,19 @@ export default function AddEditAssignmentModal({
                   )}
                 </div>
 
-                {/* Bureau */}
+                {/* Device Location */}
                 <div>
-                  <label className={labelClass}>Bureau</label>
+                  <label className={labelClass}>Location (Bureau)</label>
                   <input
-                    placeholder="e.g. Bureau 12"
-                    {...register("bureau")}
+                    placeholder="e.g. Bureau 12 / Informatique"
+                    {...register("location")}
                     className={inputClass}
                   />
                 </div>
 
                 {/* Block */}
                 <div>
-                  <label className={labelClass}>Block / Location</label>
+                  <label className={labelClass}>Block / Area</label>
                   <select {...register("block")} className={inputClass}>
                     <option value="">Select a location</option>
                     {blocks.map((block) => (

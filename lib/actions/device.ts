@@ -16,7 +16,7 @@ type: DeviceType;
 brand: string;
 model: string;
 arrivalDate: string;
-siteProject: string;
+location: string;
 condition: DeviceCondition;
 qty: number;
 state: DeviceState;
@@ -38,7 +38,7 @@ model: data.model || null,
 arrivalDate: data.arrivalDate
 ? new Date(data.arrivalDate)
 : null,
-siteProject: data.siteProject || null,
+location: data.location || null,
 condition: data.condition || DeviceCondition.NEUF,
 qty: Number(data.qty ?? 1),
 state: data.state || DeviceState.en_Stock,
@@ -82,7 +82,7 @@ model: data.model || null,
 arrivalDate: data.arrivalDate
 ? new Date(data.arrivalDate)
 : null,
-siteProject: data.siteProject || null,
+location: data.location || null,
 condition: data.condition,
 qty: Number(data.qty ?? 1),
 state: data.state,

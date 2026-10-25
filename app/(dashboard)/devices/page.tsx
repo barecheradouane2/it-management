@@ -98,7 +98,7 @@ export default async function DevicesPage({
           },
         },
         {
-          siteProject: {
+          location: {
             contains: search,
             mode: "insensitive",
           },
@@ -202,8 +202,8 @@ export default async function DevicesPage({
       className: "px-6 py-2 text-left border-b border-black",
     },
     {
-      header: "Site / Project",
-      accessor: "siteProject",
+      header: "location",
+      accessor: "location",
       className: "px-6 py-2 text-left border-b border-black",
     },
     {
@@ -272,7 +272,7 @@ export default async function DevicesPage({
         </td>
 
         <td className="px-6 py-4">
-          {device.siteProject || "-"}
+          {device.location || "-"}
         </td>
 
         <td className="px-6 py-4">{device.condition}</td>

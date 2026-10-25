@@ -96,7 +96,7 @@ export default async function TransfersPage({
     : {};
 
   const columns = [
-    { header: "#", accessor: "index", className: "px-6 py-2 text-left border-b-1 border-black" },
+  
     { header: "Expéditeur", accessor: "siteExpediteur", className: "px-6 py-2 text-left border-b-1 border-black" },
     { header: "Date Expédition", accessor: "dateExpediteur", className: "px-6 py-2 text-left border-b-1 border-black" },
     { header: "Destinataire", accessor: "siteDestinataire", className: "px-6 py-2 text-left border-b-1 border-black" },
