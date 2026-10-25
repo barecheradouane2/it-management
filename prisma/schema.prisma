@@ -82,6 +82,7 @@ model Employee {
   service  Service?
 
   assignments Assignment[]
+  consumptions Consumption[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -103,6 +104,7 @@ model Device {
 
   assignments   Assignment[]
   transferItems TransferItem[]
+  consumptions  Consumption[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -241,6 +243,29 @@ model User {
   role         UserRole @default(USER)
   isActive     Boolean  @default(true)
 
+  consumptions Consumption[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model Consumption {
+  id          Int      @id @default(autoincrement())
+  deviceId    Int
+  employeeId  Int?     // The employee who received or used the consumable
+  userId      Int?     // The system user/admin who recorded the operation
+  quantity    Int      @default(1)
+  note        String?
+
+  consumedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  device      Device    @relation(fields: [deviceId], references: [id])
+  employee    Employee? @relation(fields: [employeeId], references: [id])
+  user        User?     @relation(fields: [userId], references: [id])
+
+  @@index([deviceId])
+  @@index([employeeId])
+  @@index([userId])
+  @@index([consumedAt])
 }

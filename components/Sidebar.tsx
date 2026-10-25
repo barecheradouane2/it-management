@@ -12,7 +12,8 @@ import {
   X,
   Settings,
   Van,
-  FileText 
+  FileText ,
+  WalletCards 
 } from "lucide-react";
 
 const navigation = [
@@ -45,6 +46,11 @@ const navigation = [
     name:" DFL",
     href:"/supplyrequest",
     icon:FileText
+  },
+  {
+    name: "Consumption",
+    href:"/consumption",
+    icon:WalletCards
   }
 ];
 
