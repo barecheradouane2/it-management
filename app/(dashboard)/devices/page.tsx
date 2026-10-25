@@ -234,7 +234,7 @@ export default async function DevicesPage({
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 p-8">
+    <main className="min-h-screen bg-slate-50 p-4">
       <div className="mx-auto max-w-8xl">
         <div className="overflow-hidden rounded-xl bg-white shadow-sm">
           <div className="flex items-center justify-between gap-4 border-b p-4">

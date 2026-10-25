@@ -128,13 +128,18 @@ export default async function TransfersPage({
     }),
   ]);
 
-  const renderRow = (transfer: (typeof transfers)[number], index: number) => (
+  const renderRow = (transfer: (typeof transfers)[number], index: number) => {
+    
+   const itemNumber = (page - 1) * ITEM_PER_PAGE + index + 1;
+
+     return (
+
     <tr
       key={transfer.id}
       className="border-b border-gray-200 text-sm hover:bg-slate-50"
     >
       <td className="px-6 py-4 font-medium">
-        {ITEM_PER_PAGE * (page - 1) + index + 1}
+        {itemNumber}
       </td>
 
       <td className="px-6 py-4 font-medium">
@@ -194,10 +199,11 @@ export default async function TransfersPage({
         </div>
       </td>
     </tr>
-  );
+    )
+  };
 
   return (
-    <main className="min-h-screen bg-slate-50 p-8">
+    <main className="min-h-screen bg-slate-50 p-5">
       <div className="mx-auto max-w-8xl">
         {/* Page Header */}
         <div className="flex items-center justify-between">

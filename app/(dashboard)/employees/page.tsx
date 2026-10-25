@@ -76,14 +76,14 @@ export default async function EmployeesPage({
      ];
 
 const renderRow = (employee: (typeof employees)[number],index: number) => {
-  
-
+   
+ const itemNumber = (page - 1) * ITEM_PER_PAGE + index + 1;
   return (
     <tr
       key={employee.id}
       className="border-b border-gray-200 text-sm hover:bg-slate-50"
     >
-      <td className="px-6 py-4">{index + 1}</td>
+       <td className="px-6 py-4 font-medium">{itemNumber}</td>
       <td className="px-6 py-4 font-medium">{employee.fullname}</td>
       <td className="px-6 py-4">{employee.function || "-"}</td>
       <td className="px-6 py-4">{employee.service || "-"}</td>
@@ -136,7 +136,7 @@ const renderRow = (employee: (typeof employees)[number],index: number) => {
   ]);
 
   return (
-    <main className="min-h-screen bg-slate-50 p-8">
+    <main className="min-h-screen bg-slate-50 p-5">
       <div className="mx-auto max-w-8xl">
         <div className="flex items-center justify-between">
           <div>

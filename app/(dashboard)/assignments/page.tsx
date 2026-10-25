@@ -185,13 +185,14 @@ export default async function AssignmentsPage({
 
         <td className="px-6 py-4 font-medium">
           <div>
-            <p className="font-semibold text-slate-900">
-              {assignment.device.brand} {assignment.device.model ?? ""}
-            </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs font-semibold text-slate-500">
               {/* {assignment.device.type.replaceAll("_", " ")} | SARPI:{" "} */}
               {assignment.device.codeSarpi || "-"}
             </p>
+            <p className=" text-slate-900">
+              {assignment.device.brand} {assignment.device.model ?? ""}
+            </p>
+            
           </div>
         </td>
 
@@ -256,16 +257,16 @@ export default async function AssignmentsPage({
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 p-8">
+    <main className="min-h-screen bg-slate-50 px-5">
       <div className="mx-auto max-w-8xl">
-        <div>
+        {/* <div>
           <h1 className="text-3xl font-bold">Assignments</h1>
           <p className="mt-2 text-slate-500">
             Manage assigned IT equipment and employee allocations.
           </p>
-        </div>
+        </div> */}
 
-        <div className="mt-8 overflow-hidden rounded-xl bg-white shadow-sm">
+        <div className="mt-4 overflow-hidden rounded-xl bg-white shadow-sm">
           <div className="flex items-center justify-between gap-4 border-b p-4">
             <div>
               <h2 className="text-lg font-semibold">Assignments List</h2>
