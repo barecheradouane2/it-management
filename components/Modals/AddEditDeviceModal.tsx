@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,6 +15,7 @@ type Device = {
   id: number;
   codeSarpi: string | null;
   serialNumber: string | null;
+  hostName: string | null;
   type: DeviceFormData["type"];
   brand: string;
   model: string | null;
@@ -32,7 +32,6 @@ type Props = {
   onSuccess?: () => void;
 };
 
-// These values must match the Prisma DeviceType enum.
 const deviceTypes: DeviceFormData["type"][] = [
   "UNITE",
   "ECRAN",
@@ -47,17 +46,15 @@ const deviceTypes: DeviceFormData["type"][] = [
   "TONER",
   "BATTERIE",
   "ADAPTATEUR_WIFI",
-  "HARD_DISK_EXTERN"
+  "HARD_DISK_EXTERN",
 ];
 
-// These values must match the Prisma Condition enum.
 const conditions: DeviceFormData["condition"][] = [
   "NEUF",
   "EN_PANNE",
   "ANCIEN",
 ];
 
-// These values must match the current Prisma DeviceState enum.
 const states: DeviceFormData["state"][] = [
   "en_Service",
   "Transfert",
@@ -67,6 +64,7 @@ const states: DeviceFormData["state"][] = [
 const EMPTY_FORM: DeviceFormData = {
   codeSarpi: "",
   serialNumber: "",
+  hostName: "",
   type: "UNITE",
   brand: "",
   model: "",
@@ -95,8 +93,9 @@ export default function AddEditDeviceModal({
   });
 
   const getDeviceValues = (item: Device): DeviceFormData => ({
-    codeSarpi: item.codeSarpi  ?? "",
+    codeSarpi: item.codeSarpi ?? "",
     serialNumber: item.serialNumber ?? "",
+    hostName: item.hostName ?? "",
     type: item.type,
     brand: item.brand,
     model: item.model ?? "",
@@ -143,8 +142,7 @@ export default function AddEditDeviceModal({
           : "Device added successfully!"
       );
 
-      // setOpen(false);
-      reset(EMPTY_FORM);
+      closeModal();
       onSuccess?.();
     } catch (error) {
       console.error("Error saving device:", error);
@@ -153,7 +151,7 @@ export default function AddEditDeviceModal({
   };
 
   const inputClass =
-    "w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200";
+    "w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 text-sm";
 
   const labelClass =
     "mb-2 block text-left text-sm font-medium text-slate-700";
@@ -229,16 +227,12 @@ export default function AddEditDeviceModal({
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {/* SARPI Code */}
                 <div>
-                  <label className={labelClass}>
-                    Code SARPI *
-                  </label>
-
+                  <label className={labelClass}>Code SARPI</label>
                   <input
                     placeholder="Enter SARPI code"
                     {...register("codeSarpi")}
                     className={inputClass}
                   />
-
                   {errors.codeSarpi && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.codeSarpi.message}
@@ -248,10 +242,7 @@ export default function AddEditDeviceModal({
 
                 {/* Serial Number */}
                 <div>
-                  <label className={labelClass}>
-                    Serial Number
-                  </label>
-
+                  <label className={labelClass}>Serial Number</label>
                   <input
                     placeholder="Enter serial number"
                     {...register("serialNumber")}
@@ -259,12 +250,19 @@ export default function AddEditDeviceModal({
                   />
                 </div>
 
+                {/* Hostname */}
+                <div>
+                  <label className={labelClass}>Hostname</label>
+                  <input
+                    placeholder="e.g. PC-DRIA-001"
+                    {...register("hostName")}
+                    className={inputClass}
+                  />
+                </div>
+
                 {/* Device Type */}
                 <div>
-                  <label className={labelClass}>
-                    Device Type *
-                  </label>
-
+                  <label className={labelClass}>Device Type *</label>
                   <select
                     {...register("type", {
                       required: "Device type is required",
@@ -281,21 +279,16 @@ export default function AddEditDeviceModal({
 
                 {/* Brand */}
                 <div>
-                  <label className={labelClass}>
-                    Brand *
-                  </label>
-
+                  <label className={labelClass}>Brand *</label>
                   <input
                     placeholder="e.g. HP, Dell, Lenovo"
                     {...register("brand", {
                       required: "Brand is required",
                       validate: (value) =>
-                        value.trim().length > 0 ||
-                        "Brand cannot be empty",
+                        value.trim().length > 0 || "Brand cannot be empty",
                     })}
                     className={inputClass}
                   />
-
                   {errors.brand && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.brand.message}
@@ -305,10 +298,7 @@ export default function AddEditDeviceModal({
 
                 {/* Model */}
                 <div>
-                  <label className={labelClass}>
-                    Model
-                  </label>
-
+                  <label className={labelClass}>Model</label>
                   <input
                     placeholder="Enter model"
                     {...register("model")}
@@ -318,10 +308,7 @@ export default function AddEditDeviceModal({
 
                 {/* Arrival Date */}
                 <div>
-                  <label className={labelClass}>
-                    Arrival Date
-                  </label>
-
+                  <label className={labelClass}>Arrival Date</label>
                   <input
                     type="date"
                     {...register("arrivalDate")}
@@ -329,14 +316,11 @@ export default function AddEditDeviceModal({
                   />
                 </div>
 
-                {/* Site / Project */}
+                {/* Location */}
                 <div>
-                  <label className={labelClass}>
-                   location
-                  </label>
-
+                  <label className={labelClass}>Location (Bureau / Site)</label>
                   <input
-                    placeholder="location"
+                    placeholder="e.g. Bureau 12 / Informatique"
                     {...register("location")}
                     className={inputClass}
                   />
@@ -344,10 +328,7 @@ export default function AddEditDeviceModal({
 
                 {/* Condition */}
                 <div>
-                  <label className={labelClass}>
-                    Condition *
-                  </label>
-
+                  <label className={labelClass}>Condition *</label>
                   <select
                     {...register("condition", {
                       required: "Condition is required",
@@ -355,10 +336,7 @@ export default function AddEditDeviceModal({
                     className={inputClass}
                   >
                     {conditions.map((condition) => (
-                      <option
-                        key={condition}
-                        value={condition}
-                      >
+                      <option key={condition} value={condition}>
                         {condition.replaceAll("_", " ")}
                       </option>
                     ))}
@@ -367,10 +345,7 @@ export default function AddEditDeviceModal({
 
                 {/* State */}
                 <div>
-                  <label className={labelClass}>
-                    State *
-                  </label>
-
+                  <label className={labelClass}>State *</label>
                   <select
                     {...register("state", {
                       required: "State is required",
@@ -387,10 +362,7 @@ export default function AddEditDeviceModal({
 
                 {/* Quantity */}
                 <div>
-                  <label className={labelClass}>
-                    Quantity *
-                  </label>
-
+                  <label className={labelClass}>Quantity *</label>
                   <input
                     type="number"
                     min={1}
@@ -408,7 +380,6 @@ export default function AddEditDeviceModal({
                     })}
                     className={inputClass}
                   />
-
                   {errors.qty && (
                     <p className="mt-1 text-sm text-red-500">
                       {errors.qty.message}
@@ -418,10 +389,7 @@ export default function AddEditDeviceModal({
 
                 {/* Note */}
                 <div className="sm:col-span-2">
-                  <label className={labelClass}>
-                    Note
-                  </label>
-
+                  <label className={labelClass}>Note</label>
                   <textarea
                     rows={3}
                     placeholder="Additional information..."
@@ -450,8 +418,8 @@ export default function AddEditDeviceModal({
                   {isSubmitting
                     ? "Saving..."
                     : isEdit
-                      ? "Save Changes"
-                      : "Add Device"}
+                    ? "Save Changes"
+                    : "Add Device"}
                 </button>
               </div>
             </form>

@@ -33,7 +33,6 @@ export default function AssignmentFilters({
       params.delete(key);
     }
 
-    // Return to page 1 when a filter changes.
     params.delete("page");
 
     const query = params.toString();
@@ -41,14 +40,13 @@ export default function AssignmentFilters({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 p-4">
+    <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 bg-slate-50/50 p-4">
       <select
         value={deviceId}
         onChange={(e) => updateFilter("deviceId", e.target.value)}
         className="min-w-48 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
       >
         <option value="">All devices</option>
-
         {devices.map((device) => (
           <option key={device.id} value={device.id}>
             {device.codeSarpi}
@@ -62,7 +60,6 @@ export default function AssignmentFilters({
         className="min-w-48 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
       >
         <option value="">All employees</option>
-
         {employees.map((employee) => (
           <option key={employee.id} value={employee.id}>
             {employee.fullname}
@@ -82,7 +79,7 @@ export default function AssignmentFilters({
             const query = params.toString();
             router.push(query ? `${pathname}?${query}` : pathname);
           }}
-          className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+          className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 ml-auto"
         >
           Clear filters
         </button>

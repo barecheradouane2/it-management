@@ -24,6 +24,7 @@ type DeviceOption = {
   codeSarpi: string | null;
   brand: string;
   model: string | null;
+  hostName?: string | null;
   state: string;
   qty: number;
   location?: string | null;
@@ -41,9 +42,9 @@ type Assignment = {
   employeeId: number;
   device?: {
     location?: string | null;
+    hostName?: string | null;
   };
   block: Block | null;
-  hostName: string | null;
   condition: AssignmentCondition;
   note: string | null;
   assignedAt: Date | string;
@@ -128,10 +129,11 @@ export default function AddEditAssignmentModal({
     }
   }, [isBulk, setValue]);
 
-  // Pre-fill location if the selected device already has one registered
+  // Pre-fill location and hostname from selected device if adding a new assignment
   useEffect(() => {
     if (selectedDevice && !isEdit) {
       setValue("location", selectedDevice.location ?? "");
+      setValue("hostName", selectedDevice.hostName ?? "");
     }
   }, [selectedDevice, isEdit, setValue]);
 
@@ -146,8 +148,8 @@ export default function AddEditAssignmentModal({
     deviceId: item.deviceId,
     employeeId: item.employeeId,
     location: item.device?.location ?? "",
+    hostName: item.device?.hostName ?? "",
     block: item.block ?? "",
-    hostName: item.hostName ?? "",
     condition: item.condition,
     note: item.note ?? "",
     assignedAt: new Date(item.assignedAt).toISOString().slice(0, 10),
@@ -164,17 +166,13 @@ export default function AddEditAssignmentModal({
   }, [assignment, reset]);
 
   const openModal = () => {
-    reset(
-      assignment ? getAssignmentValues(assignment) : { ...emptyValues }
-    );
+    reset(assignment ? getAssignmentValues(assignment) : { ...emptyValues });
     setOpen(true);
   };
 
   const closeModal = () => {
     setOpen(false);
-    reset(
-      assignment ? getAssignmentValues(assignment) : { ...emptyValues }
-    );
+    reset(assignment ? getAssignmentValues(assignment) : { ...emptyValues });
   };
 
   const onSubmit = async (data: AssignmentFormData) => {
@@ -182,6 +180,7 @@ export default function AddEditAssignmentModal({
       const payload: AssignmentFormData = {
         ...data,
         location: data.location?.trim() || null,
+        hostName: data.hostName?.trim() || null,
         qty: isBulk ? Number(data.qty) || 1 : 1,
       };
 
@@ -363,7 +362,7 @@ export default function AddEditAssignmentModal({
 
                 {/* Device Location */}
                 <div>
-                  <label className={labelClass}>Location (Bureau)</label>
+                  <label className={labelClass}>Device Location (Bureau)</label>
                   <input
                     placeholder="e.g. Bureau 12 / Informatique"
                     {...register("location")}

@@ -7,9 +7,9 @@ import { DeviceState, AssignmentCondition, Block } from "@prisma/client";
 export interface AssignmentFormData {
   deviceId: number;
   employeeId: number;
-  location?: string | null; // Updates Device.location
+  location?: string | null;  // Updates Device.location
+  hostName?: string | null;  // Updates Device.hostName
   block?: Block | string | null;
-  hostName?: string | null;
   condition: AssignmentCondition;
   note?: string | null;
   assignedAt: string | Date;
@@ -45,24 +45,24 @@ export async function createAssignment(data: AssignmentFormData) {
 
       const remainingQty = device.qty - requestedQty;
 
-      // 2. Decrement device stock, set state, and update device location
+      // 2. Decrement stock, update state, location, and hostName on Device
       await tx.device.update({
         where: { id: device.id },
         data: {
           qty: { decrement: requestedQty },
           state: remainingQty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
           location: data.location?.trim() || null,
+          hostName: data.hostName?.trim() || null,
         },
       });
 
-      // 3. Create assignment record without bureau
+      // 3. Create assignment record (without hostName or bureau)
       const newAssignment = await tx.assignment.create({
         data: {
           deviceId: data.deviceId,
           employeeId: data.employeeId,
           qty: requestedQty,
           block: (data.block as Block) || null,
-          hostName: data.hostName || null,
           condition: data.condition || AssignmentCondition.NEUF,
           note: data.note || null,
           assignedAt: data.assignedAt ? new Date(data.assignedAt) : new Date(),
@@ -117,7 +117,12 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
       const wasReturned = Boolean(existing.returnedAt);
       const isNowReturned = Boolean(returnedAt);
 
-      // 2. Manage stock restoration or deduction across devices
+      const deviceDataUpdates = {
+        location: data.location?.trim() || null,
+        hostName: data.hostName?.trim() || null,
+      };
+
+      // 2. Manage stock restoration or deduction
       if (!wasReturned && isNowReturned) {
         // Device returned: return assigned quantity back to inventory
         await tx.device.update({
@@ -125,7 +130,7 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
           data: {
             qty: { increment: oldQty },
             state: DeviceState.en_Stock,
-            location: data.location?.trim() || null,
+            ...deviceDataUpdates,
           },
         });
       } else if (wasReturned && !isNowReturned) {
@@ -140,11 +145,11 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
           data: {
             qty: { decrement: newQty },
             state: remainingQty > 0 ? DeviceState.en_Stock : DeviceState.en_Service,
-            location: data.location?.trim() || null,
+            ...deviceDataUpdates,
           },
         });
       } else if (!wasReturned && !isNowReturned) {
-        // Still active: adjust inventory by the delta
+        // Still active: adjust inventory by delta
         const qtyDelta = newQty - oldQty;
 
         if (qtyDelta > 0 && existing.device.qty < qtyDelta) {
@@ -155,7 +160,7 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
           where: { id: existing.deviceId },
           data: {
             qty: { decrement: qtyDelta },
-            location: data.location?.trim() || null,
+            ...deviceDataUpdates,
           },
           select: { qty: true },
         });
@@ -167,12 +172,10 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
           },
         });
       } else {
-        // Both were returned; update location only
+        // Both were returned; update metadata only
         await tx.device.update({
           where: { id: existing.deviceId },
-          data: {
-            location: data.location?.trim() || null,
-          },
+          data: deviceDataUpdates,
         });
       }
 
@@ -184,7 +187,6 @@ export async function updateAssignment(id: number, data: AssignmentFormData) {
           employeeId: data.employeeId,
           qty: newQty,
           block: (data.block as Block) || null,
-          hostName: data.hostName || null,
           condition: data.condition,
           note: data.note || null,
           assignedAt: data.assignedAt ? new Date(data.assignedAt) : new Date(),
@@ -240,8 +242,7 @@ export async function deleteAssignment(id: number) {
           data: {
             qty: { increment: assignment.qty },
             state: DeviceState.en_Stock,
-            location:null
-           
+            location: null,
           },
         });
       }

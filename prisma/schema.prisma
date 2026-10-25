@@ -94,6 +94,7 @@ model Device {
   serialNumber String?         @unique
   type         DeviceType
   brand        String
+  hostName      String?
   model        String?
   arrivalDate  DateTime?
   location     String?
@@ -119,7 +120,7 @@ model Assignment {
 
   
   block     Block?
-  hostName  String?
+  
   condition AssignmentCondition @default(NEUF)
   note      String?
   qty        Int @default(1)
