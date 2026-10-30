@@ -365,15 +365,15 @@ export default function AddEditDeviceModal({
                   <label className={labelClass}>Quantity *</label>
                   <input
                     type="number"
-                    min={1}
+                    // min={1}
                     step={1}
                     {...register("qty", {
                       valueAsNumber: true,
                       required: "Quantity is required",
-                      min: {
-                        value: 1,
-                        message: "Quantity must be at least 1",
-                      },
+                      // min: {
+                      //   value: 1,
+                      //   message: "Quantity must be at least 1",
+                      // },
                       validate: (value) =>
                         Number.isInteger(value) ||
                         "Quantity must be a whole number",

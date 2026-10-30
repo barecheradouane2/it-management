@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Printer } from "lucide-react";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import type { Prisma, DeviceType, DeviceCondition, DeviceState } from "@prisma/client";
+import ExportRecensementButton from "@/components/ExportRecensementButton";
 
 import AddEditDeviceModal from "@/components/Modals/AddEditDeviceModal";
 import DeviceFilters from "@/components/DeviceFilters";
@@ -245,10 +246,11 @@ export default async function DevicesPage({
               </p>
             </div>
 
-            <div className="flex flex-1 items-center justify-end gap-2">
-              <TableSearch />
-              <AddEditDeviceModal />
-            </div>
+           <div className="flex flex-1 items-center justify-end gap-2">
+  <TableSearch />
+  <ExportRecensementButton label="Fiche Recensement" />
+  <AddEditDeviceModal />
+</div>
           </div>
 
           <DeviceFilters brands={brands} />
