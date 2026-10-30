@@ -33,7 +33,7 @@ type Props = {
 };
 
 const deviceTypes: DeviceFormData["type"][] = [
-  "UNITE",
+ "UNITE",
   "ECRAN",
   "ONDULEUR",
   "IMPRIMANTE",
@@ -47,6 +47,19 @@ const deviceTypes: DeviceFormData["type"][] = [
   "BATTERIE",
   "ADAPTATEUR_WIFI",
   "HARD_DISK_EXTERN",
+  "TRACEUR",
+   "STATION",
+   "SERVEUR",
+  "CABLE_ALIMENTATION",
+  "CABLE_VGA",
+  "CABLE_HDMI",
+  "CABLE_DISPLAYPORT",
+  "BOITE_ALIMENTATION",
+  "CABLE_ETHERNET_1M",
+  "CABLE_ETHERNET_3M",
+  "CLAVIER",
+  "SOURIS",
+  "CABLE_MALE_FEMELLE"
 ];
 
 const conditions: DeviceFormData["condition"][] = [
