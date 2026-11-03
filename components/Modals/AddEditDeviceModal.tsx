@@ -155,7 +155,7 @@ export default function AddEditDeviceModal({
           : "Device added successfully!"
       );
 
-      closeModal();
+      // closeModal();
       onSuccess?.();
     } catch (error) {
       console.error("Error saving device:", error);
@@ -204,10 +204,10 @@ export default function AddEditDeviceModal({
             role="dialog"
             aria-modal="true"
             aria-labelledby="device-modal-title"
-            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl"
+            className="max-h-[100vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b p-6">
+            <div className="flex items-center justify-between border-b p-5 ">
               <div>
                 <h2
                   id="device-modal-title"

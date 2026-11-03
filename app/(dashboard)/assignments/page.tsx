@@ -10,6 +10,7 @@ import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
 
 import { deleteAssignment } from "@/lib/actions/assignment";
+import PrintEmployeeButton from "@/components/PrintEmployeeButton";
 
 type AssignmentsPageProps = {
   searchParams: Promise<{
@@ -240,6 +241,8 @@ export default async function AssignmentsPage({
 
         <td className="px-6 py-4">
           <div className="flex items-center gap-3">
+
+            <PrintEmployeeButton employeeId={assignment.employee.id} />
             <AddEditAssignmentModal
               assignment={assignment}
               devices={devices}

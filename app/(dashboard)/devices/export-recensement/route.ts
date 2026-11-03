@@ -5,8 +5,6 @@ import type { Prisma, DeviceState, DeviceCondition, DeviceType } from "@prisma/c
 import path from "path";
 import fs from "fs/promises";
 
-const ITEMS_PER_PAGE = 23;
-
 // Map bureau / room number or pattern to corresponding Service
 function getServiceFromBureau(location?: string | null): string {
   if (!location) return "";
@@ -75,8 +73,8 @@ export async function GET(request: NextRequest) {
       orientation: "landscape",
       paperSize: 9, // A4
       fitToPage: true,
-      fitToWidth: 1,
-      fitToHeight: 0,
+      fitToWidth: 1,  // Fit all columns on 1 page wide
+      fitToHeight: 1, // Fit all rows on 1 page tall
       margins: {
         left: 0.25,
         right: 0.25,
@@ -88,21 +86,22 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  // Explicit column widths (Column A to M)
+  // Explicit column widths (Column A to N)
   sheet.columns = [
-    { key: "codeSarpi", width: 19 },       // Col A: CODE SARPI
-    { key: "designation", width: 28 },     // Col B: Désignation
-    { key: "dirReg", width: 9 },           // Col C: Dir Reg
-    { key: "projet", width: 9 },           // Col D: Projet
-    { key: "direction", width: 14 },       // Col E: Direction
-    { key: "service", width: 14 },         // Col F: Service
-    { key: "lieu", width: 18 },            // Col G: Lieu
-    { key: "marque", width: 15 },          // Col H: Marque
-    { key: "model", width: 16 },           // Col I: Type/Model
-    { key: "serie", width: 18 },           // Col J: N° Série
-    { key: "immat", width: 14 },           // Col K: Immatriculation
-    { key: "etat", width: 13 },            // Col L: Etat du Bien
-    { key: "obs", width: 18 },             // Col M: OBS
+    { key: "codeSarpi", width: 18 },       // Col A: CODE SARPI
+    { key: "designation", width: 25 },     // Col B: Désignation
+    { key: "type", width: 16 },            // Col C: Type de Matériel
+    { key: "dirReg", width: 9 },           // Col D: Dir Reg
+    { key: "projet", width: 9 },           // Col E: Projet
+    { key: "direction", width: 13 },       // Col F: Direction
+    { key: "service", width: 14 },         // Col G: Service
+    { key: "lieu", width: 16 },            // Col H: Lieu
+    { key: "marque", width: 14 },          // Col I: Marque
+    { key: "model", width: 16 },           // Col J: Modèle
+    { key: "serie", width: 17 },           // Col K: N° Série
+    { key: "immat", width: 13 },           // Col L: Immatriculation
+    { key: "etat", width: 13 },            // Col M: Etat du Bien
+    { key: "obs", width: 18 },             // Col N: OBS
   ];
 
   const thinBorder: Partial<ExcelJS.Borders> = {
@@ -115,20 +114,21 @@ export async function GET(request: NextRequest) {
   const columnsHeaders = [
     "CODE SARPI",
     "Désignation",
+    "Type de Matériel",
     "Dir Reg",
     "Projet",
     "Direction",
     "Service",
     "Lieu",
     "Marque",
-    "Type/Model",
+    "Modèle",
     "N° Série",
     "Immatriculation",
     "Etat du Bien",
     "OBS",
   ];
 
-  // Load logo as base64 to avoid Buffer/ArrayBuffer typing mismatches
+  // Load logo as base64
   let logoImageId: number | null = null;
   try {
     const logoPath = path.join(process.cwd(), "public", "sarpi-logo.png");
@@ -141,191 +141,177 @@ export async function GET(request: NextRequest) {
     console.warn("Logo file not found in public/sarpi-logo.png, continuing without logo.", err);
   }
 
-  const totalPages = Math.max(1, Math.ceil(devices.length / ITEMS_PER_PAGE));
   let currentRowIdx = 1;
 
-  for (let pageNum = 0; pageNum < totalPages; pageNum++) {
-    // -------------------------------------------------------------
-    // 1. PAGE HEADER (SARPI logo & FICHE DE RECENSEMENT)
-    // -------------------------------------------------------------
-    const titleRow = sheet.getRow(currentRowIdx);
-    titleRow.height = 48;
+  // -------------------------------------------------------------
+  // 1. PAGE HEADER (SARPI logo & FICHE DE RECENSEMENT)
+  // -------------------------------------------------------------
+  const titleRow = sheet.getRow(currentRowIdx);
+  titleRow.height = 48;
 
-    sheet.mergeCells(`B${currentRowIdx}:C${currentRowIdx}`);
+  sheet.mergeCells(`B${currentRowIdx}:C${currentRowIdx}`);
 
-    if (logoImageId !== null) {
-      sheet.addImage(logoImageId, {
-        tl: { col: 1.05, row: currentRowIdx - 0.95 },
-        ext: { width: 130, height: 44 },
-      });
-    } else {
-      const companyCell = sheet.getCell(`B${currentRowIdx}`);
-      companyCell.value = "SARPI spa";
-      companyCell.font = { bold: true, size: 14, name: "Calibri" };
-      companyCell.alignment = { vertical: "middle", horizontal: "left" };
-    }
+  if (logoImageId !== null) {
+    sheet.addImage(logoImageId, {
+      tl: { col: 1.05, row: currentRowIdx - 0.95 },
+      ext: { width: 130, height: 44 },
+    });
+  } else {
+    const companyCell = sheet.getCell(`B${currentRowIdx}`);
+    companyCell.value = "SARPI spa";
+    companyCell.font = { bold: true, size: 14, name: "Calibri" };
+    companyCell.alignment = { vertical: "middle", horizontal: "left" };
+  }
 
-    sheet.mergeCells(`D${currentRowIdx}:K${currentRowIdx}`);
-    const docTitleCell = sheet.getCell(`D${currentRowIdx}`);
-    docTitleCell.value = `FICHE DE RECENSEMENT N° ……………... (Page ${pageNum + 1}/${totalPages})`;
-    docTitleCell.font = { bold: true, size: 12, name: "Calibri" };
-    docTitleCell.alignment = { horizontal: "center", vertical: "middle" };
+  sheet.mergeCells(`D${currentRowIdx}:L${currentRowIdx}`);
+  const docTitleCell = sheet.getCell(`D${currentRowIdx}`);
+  docTitleCell.value = `FICHE DE RECENSEMENT N° ……………...`;
+  docTitleCell.font = { bold: true, size: 12, name: "Calibri" };
+  docTitleCell.alignment = { horizontal: "center", vertical: "middle" };
 
-    currentRowIdx += 2;
+  currentRowIdx += 2;
 
-    // -------------------------------------------------------------
-    // 2. GROUPED HEADERS (Localisation & Référence Technique)
-    // -------------------------------------------------------------
-    const groupHeaderRow = sheet.getRow(currentRowIdx);
-    groupHeaderRow.height = 38;
+  // -------------------------------------------------------------
+  // 2. GROUPED HEADERS (Localisation & Référence Technique)
+  // -------------------------------------------------------------
+  const groupHeaderRow = sheet.getRow(currentRowIdx);
+  groupHeaderRow.height = 34;
 
-    sheet.mergeCells(`C${currentRowIdx}:G${currentRowIdx}`);
-    const locCell = sheet.getCell(`C${currentRowIdx}`);
-    locCell.value = "Localisation";
-    locCell.font = { bold: true, size: 10, name: "Calibri" };
-    locCell.alignment = { horizontal: "center", vertical: "middle" };
-    locCell.fill = {
+  // Localisation spans Col D to Col H (Dir Reg, Projet, Direction, Service, Lieu)
+  sheet.mergeCells(`D${currentRowIdx}:H${currentRowIdx}`);
+  const locCell = sheet.getCell(`D${currentRowIdx}`);
+  locCell.value = "Localisation";
+  locCell.font = { bold: true, size: 10, name: "Calibri" };
+  locCell.alignment = { horizontal: "center", vertical: "middle" };
+  locCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFE9ECEF" },
+  };
+
+  // Référence Technique spans Col I to Col L (Marque, Modèle, N° Série, Immatriculation)
+  sheet.mergeCells(`I${currentRowIdx}:L${currentRowIdx}`);
+  const refCell = sheet.getCell(`I${currentRowIdx}`);
+  refCell.value = "Référence Technique";
+  refCell.font = { bold: true, size: 10, name: "Calibri" };
+  refCell.alignment = { horizontal: "center", vertical: "middle" };
+  refCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFE9ECEF" },
+  };
+
+  for (let c = 4; c <= 8; c++) groupHeaderRow.getCell(c).border = thinBorder;
+  for (let c = 9; c <= 12; c++) groupHeaderRow.getCell(c).border = thinBorder;
+
+  currentRowIdx++;
+
+  // -------------------------------------------------------------
+  // 3. TABLE COLUMN HEADERS
+  // -------------------------------------------------------------
+  const colHeaderRow = sheet.getRow(currentRowIdx);
+  colHeaderRow.height = 30;
+
+  columnsHeaders.forEach((name, idx) => {
+    const cell = colHeaderRow.getCell(idx + 1);
+    cell.value = name;
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 9.5, name: "Calibri" };
+    cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    cell.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FFE9ECEF" },
+      fgColor: { argb: "FF1E293B" },
     };
+    cell.border = thinBorder;
+  });
 
-    sheet.mergeCells(`H${currentRowIdx}:K${currentRowIdx}`);
-    const refCell = sheet.getCell(`H${currentRowIdx}`);
-    refCell.value = "Référence Technique";
-    refCell.font = { bold: true, size: 10, name: "Calibri" };
-    refCell.alignment = { horizontal: "center", vertical: "middle" };
-    refCell.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FFE9ECEF" },
-    };
+  currentRowIdx++;
 
-    for (let c = 3; c <= 7; c++) groupHeaderRow.getCell(c).border = thinBorder;
-    for (let c = 8; c <= 11; c++) groupHeaderRow.getCell(c).border = thinBorder;
+  // -------------------------------------------------------------
+  // 4. DATA ROWS
+  // -------------------------------------------------------------
+  devices.forEach((d) => {
+    const dataRow = sheet.getRow(currentRowIdx);
+    dataRow.height = 22;
 
-    currentRowIdx++;
+    const computedService = getServiceFromBureau(d.location);
+    const formattedType = d.type ? d.type.replaceAll("_", " ").trim() : "";
 
-    // -------------------------------------------------------------
-    // 3. TABLE COLUMN HEADERS
-    // -------------------------------------------------------------
-    const colHeaderRow = sheet.getRow(currentRowIdx);
-    colHeaderRow.height = 32;
+    const rowValues = [
+      d.codeSarpi || "",
+      [d.type, d.brand, d.model]
+        .filter(Boolean)
+        .map((value) => value!.replaceAll("_", " ").trim())
+        .join(" "),
+      formattedType,
+      "DRIA",
+      "DRIA",
+      "DRIA",
+      computedService,
+      d.location || "",
+      d.brand || "",
+      d.model || "",
+      d.serialNumber || "",
+      "",
+      d.condition || d.state || "",
+      d.note || "",
+    ];
 
-    columnsHeaders.forEach((name, idx) => {
-      const cell = colHeaderRow.getCell(idx + 1);
-      cell.value = name;
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 9.5, name: "Calibri" };
-      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FF1E293B" },
+    rowValues.forEach((val, colIdx) => {
+      const cell = dataRow.getCell(colIdx + 1);
+      cell.value = val;
+      cell.font = { size: 9, name: "Calibri" };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: colIdx === 0 || colIdx === 1 ? "left" : "center",
+        wrapText: true,
       };
       cell.border = thinBorder;
     });
 
     currentRowIdx++;
+  });
 
-    // -------------------------------------------------------------
-    // 4. DATA ROWS
-    // -------------------------------------------------------------
-    const pageDevices = devices.slice(
-      pageNum * ITEMS_PER_PAGE,
-      (pageNum + 1) * ITEMS_PER_PAGE
-    );
+  // -------------------------------------------------------------
+  // 5. FOOTER (Nom, Prénom, Date, Signature)
+  // -------------------------------------------------------------
+  const labelRow = sheet.getRow(currentRowIdx);
+  labelRow.height = 18;
 
-    for (let i = 0; i < ITEMS_PER_PAGE; i++) {
-      const d = pageDevices[i];
-      const dataRow = sheet.getRow(currentRowIdx);
-      dataRow.height = 24;
+  sheet.mergeCells(`B${currentRowIdx}:E${currentRowIdx}`);
+  const nameLabel = sheet.getCell(`B${currentRowIdx}`);
+  nameLabel.value = "Nom & Prénom :";
+  nameLabel.font = { bold: true, size: 9.5, name: "Calibri" };
+  nameLabel.alignment = { vertical: "middle", horizontal: "left" };
 
-      const computedService = d ? getServiceFromBureau(d.location) : "";
+  sheet.mergeCells(`F${currentRowIdx}:I${currentRowIdx}`);
+  const dateLabel = sheet.getCell(`F${currentRowIdx}`);
+  dateLabel.value = "Date :";
+  dateLabel.font = { bold: true, size: 9.5, name: "Calibri" };
+  dateLabel.alignment = { vertical: "middle", horizontal: "left" };
 
-      const rowValues = d
-        ? [
-            d.codeSarpi || "",
-            [d.type, d.brand, d.model]
-              .filter(Boolean)
-              .map((value) => value!.replaceAll("_", " ").trim())
-              .join(" "),
-            "DRIA",
-            "DRIA",
-            "DRIA",
-            computedService,
-            d.location || "",
-            d.brand || "",
-            d.model || "",
-            d.serialNumber || "",
-            "",
-            d.condition || d.state || "",
-            d.note || "",
-          ]
-        : ["", "", "DRIA", "DRIA", "DRIA", "", "", "", "", "", "", "", ""];
+  sheet.mergeCells(`K${currentRowIdx}:N${currentRowIdx}`);
+  const signLabel = sheet.getCell(`K${currentRowIdx}`);
+  signLabel.value = "Signature :";
+  signLabel.font = { bold: true, size: 9.5, name: "Calibri" };
+  signLabel.alignment = { vertical: "middle", horizontal: "left" };
 
-      rowValues.forEach((val, colIdx) => {
-        const cell = dataRow.getCell(colIdx + 1);
-        cell.value = val;
-        cell.font = { size: 9.5, name: "Calibri" };
-        cell.alignment = {
-          vertical: "middle",
-          horizontal: colIdx === 0 || colIdx === 1 ? "left" : "center",
-          wrapText: true,
-        };
-        cell.border = thinBorder;
-      });
+  for (let c = 2; c <= 5; c++) labelRow.getCell(c).border = thinBorder;
+  for (let c = 6; c <= 9; c++) labelRow.getCell(c).border = thinBorder;
+  for (let c = 11; c <= 14; c++) labelRow.getCell(c).border = thinBorder;
 
-      currentRowIdx++;
-    }
+  currentRowIdx++;
 
-    // -------------------------------------------------------------
-    // 5. FOOTER (Nom, Prénom, Date, Signature)
-    // -------------------------------------------------------------
-    const labelRow = sheet.getRow(currentRowIdx);
-    labelRow.height = 18;
+  const signAreaRow = sheet.getRow(currentRowIdx);
+  signAreaRow.height = 36;
 
-    sheet.mergeCells(`B${currentRowIdx}:E${currentRowIdx}`);
-    const nameLabel = sheet.getCell(`B${currentRowIdx}`);
-    nameLabel.value = "Nom & Prénom :";
-    nameLabel.font = { bold: true, size: 9.5, name: "Calibri" };
-    nameLabel.alignment = { vertical: "middle", horizontal: "left" };
+  sheet.mergeCells(`B${currentRowIdx}:E${currentRowIdx}`);
+  sheet.mergeCells(`F${currentRowIdx}:I${currentRowIdx}`);
+  sheet.mergeCells(`K${currentRowIdx}:N${currentRowIdx}`);
 
-    sheet.mergeCells(`F${currentRowIdx}:H${currentRowIdx}`);
-    const dateLabel = sheet.getCell(`F${currentRowIdx}`);
-    dateLabel.value = "Date :";
-    dateLabel.font = { bold: true, size: 9.5, name: "Calibri" };
-    dateLabel.alignment = { vertical: "middle", horizontal: "left" };
-
-    sheet.mergeCells(`J${currentRowIdx}:M${currentRowIdx}`);
-    const signLabel = sheet.getCell(`J${currentRowIdx}`);
-    signLabel.value = "Signature :";
-    signLabel.font = { bold: true, size: 9.5, name: "Calibri" };
-    signLabel.alignment = { vertical: "middle", horizontal: "left" };
-
-    for (let c = 2; c <= 5; c++) labelRow.getCell(c).border = thinBorder;
-    for (let c = 6; c <= 8; c++) labelRow.getCell(c).border = thinBorder;
-    for (let c = 10; c <= 13; c++) labelRow.getCell(c).border = thinBorder;
-
-    currentRowIdx++;
-
-    const signAreaRow = sheet.getRow(currentRowIdx);
-    signAreaRow.height = 38;
-
-    sheet.mergeCells(`B${currentRowIdx}:E${currentRowIdx}`);
-    sheet.mergeCells(`F${currentRowIdx}:H${currentRowIdx}`);
-    sheet.mergeCells(`J${currentRowIdx}:M${currentRowIdx}`);
-
-    for (let c = 2; c <= 5; c++) signAreaRow.getCell(c).border = thinBorder;
-    for (let c = 6; c <= 8; c++) signAreaRow.getCell(c).border = thinBorder;
-    for (let c = 10; c <= 13; c++) signAreaRow.getCell(c).border = thinBorder;
-
-    currentRowIdx++;
-
-    if (pageNum < totalPages - 1) {
-      sheet.getRow(currentRowIdx).addPageBreak();
-      currentRowIdx++;
-    }
-  }
+  for (let c = 2; c <= 5; c++) signAreaRow.getCell(c).border = thinBorder;
+  for (let c = 6; c <= 9; c++) signAreaRow.getCell(c).border = thinBorder;
+  for (let c = 11; c <= 14; c++) signAreaRow.getCell(c).border = thinBorder;
 
   const buffer = await workbook.xlsx.writeBuffer();
 

@@ -135,8 +135,8 @@ export default function AddEditConsumptionModal({
           : "Consumption recorded successfully!"
       );
 
-      setOpen(false);
-      reset(EMPTY_FORM);
+      // setOpen(false);
+      // reset(EMPTY_FORM);
       onSuccess?.();
     } catch (error) {
       console.error("Error saving consumption:", error);

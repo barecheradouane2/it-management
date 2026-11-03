@@ -116,7 +116,7 @@ export default function AddEditNetworkDeviceModal({
           : "Équipement réseau ajouté avec succès !"
       );
 
-      closeModal();
+      // closeModal();
       onSuccess?.();
     } catch (error) {
       console.error(error);
@@ -159,10 +159,10 @@ export default function AddEditNetworkDeviceModal({
           <div
             role="dialog"
             aria-modal="true"
-            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl"
+            className="max-h-[100vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b p-6">
+            <div className="flex items-center justify-between border-b p-5">
               <div>
                 <h2 className="text-left text-xl font-semibold text-slate-900">
                   {isEdit

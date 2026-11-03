@@ -199,7 +199,7 @@ export default function AddEditAssignmentModal({
           : "Assignment added successfully!"
       );
 
-      closeModal();
+      // closeModal();
       onSuccess?.();
     } catch (error) {
       console.error("Error saving assignment:", error);
@@ -236,9 +236,9 @@ export default function AddEditAssignmentModal({
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl">
+          <div className="max-h-[100vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl">
             {/* Header */}
-            <div className="flex items-center justify-between border-b p-6">
+            <div className="flex items-center justify-between border-b p-5">
               <div>
                 <h2 className="text-left text-xl font-semibold text-slate-900">
                   {isEdit ? "Edit Assignment" : "Add Assignment"}

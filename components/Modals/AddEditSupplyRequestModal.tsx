@@ -274,7 +274,7 @@ export default function AddEditSupplyRequestModal({
           : "Demande créée avec succès."
       );
 
-      closeModal();
+      // closeModal();
       onSuccess?.();
     } catch (error) {
       console.error("SUPPLY REQUEST FORM ERROR:", error);
