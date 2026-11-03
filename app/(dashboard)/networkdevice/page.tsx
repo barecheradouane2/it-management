@@ -105,6 +105,7 @@ export default async function NetworkDevicesPage({
             codeSarpi: true,
             serialNumber: true,
             brand: true,
+            hostName: true,
             model: true,
             type: true,
             location: true,
@@ -127,6 +128,7 @@ export default async function NetworkDevicesPage({
         serialNumber: true,
         brand: true,
         model: true,
+        hostName: true,
         type: true,
         location: true,
       },
@@ -205,7 +207,7 @@ export default async function NetworkDevicesPage({
         </td>
 
         <td className="px-6 py-4 font-mono font-medium text-slate-800">
-          {item.host || "-"}
+          {item.device?.hostName || "-"}
         </td>
 
         <td className="px-6 py-4 text-slate-600">

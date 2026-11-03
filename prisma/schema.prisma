@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+
 }
 
 enum DeviceType {
@@ -103,7 +104,7 @@ model Employee {
 
 model Device {
   id           Int             @id @default(autoincrement())
-  codeSarpi    String? 
+  codeSarpi    String?         @default("S.C")
   serialNumber String?         @unique
   type         DeviceType
   brand        String

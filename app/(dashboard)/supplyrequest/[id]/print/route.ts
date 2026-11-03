@@ -776,8 +776,8 @@ export async function GET(
       // FOOTER
       // =======================================================
 
-      const footerY1 = 45;
-      const footerY2 = 34;
+      const footerY1 = 75;
+      const footerY2 = 64;
       const footerSize = 7.5;
 
       const fText1 = "Ce document est la propriété de SARPI";

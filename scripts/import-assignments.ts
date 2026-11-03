@@ -10,7 +10,7 @@ type ExcelAssignment = {
   model?: unknown;
   serialNumber?: unknown;
   fullname?: unknown;
-  bureau?: unknown;
+
   block?: unknown;
 };
 
@@ -59,7 +59,7 @@ async function main() {
     const fullname = clean(row.fullname);
     const codeSarpi = clean(row.codeSarpi);
     const serialNumber = clean(row.serialNumber);
-    const bureau = clean(row.bureau);
+  
 
     // Skip empty lines or rows missing employee name
     if (!fullname) {
@@ -146,7 +146,7 @@ async function main() {
             data: {
               deviceId: device.id,
               employeeId: employee.id,
-              bureau,
+             
               condition: "NEUF",
               qty: 1,
             },
