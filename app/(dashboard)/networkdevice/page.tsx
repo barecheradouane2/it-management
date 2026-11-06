@@ -121,19 +121,24 @@ export default async function NetworkDevicesPage({
     prisma.networkDevice.count({ where }),
 
     // Fetch devices for the link selector
-    prisma.device.findMany({
-      select: {
-        id: true,
-        codeSarpi: true,
-        serialNumber: true,
-        brand: true,
-        model: true,
-        hostName: true,
-        type: true,
-        location: true,
-      },
-      orderBy: { brand: "asc" },
-    }),
+prisma.device.findMany({
+  where: {
+    type: {
+      in: ["IMPRIMANTE", "POINT_ACCES"],
+    },
+  },
+  select: {
+    id: true,
+    codeSarpi: true,
+    serialNumber: true,
+    brand: true,
+    model: true,
+    hostName: true,
+    type: true,
+    location: true,
+  },
+  orderBy: { brand: "asc" },
+}),
   ]);
 
   const columns = [
@@ -207,7 +212,7 @@ export default async function NetworkDevicesPage({
         </td>
 
         <td className="px-6 py-4 font-mono font-medium text-slate-800">
-          {item.device?.hostName || "-"}
+          {item.host || "-"}
         </td>
 
         <td className="px-6 py-4 text-slate-600">

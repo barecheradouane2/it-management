@@ -207,6 +207,42 @@ export default function AddEditAssignmentModal({
     }
   };
 
+   const handleKeyDown = (
+  e: React.KeyboardEvent<HTMLFormElement>
+) => {
+  if (!["ArrowDown", "ArrowUp", "Enter"].includes(e.key)) return;
+
+  const target = e.target as HTMLElement;
+
+  if (
+    !["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName) ||
+    (target instanceof HTMLInputElement &&
+      ["checkbox", "radio", "submit", "button"].includes(target.type))
+  ) {
+    return;
+  }
+
+  // Allow normal Enter behavior inside textarea
+  if (e.key === "Enter" && target.tagName === "TEXTAREA") return;
+
+  e.preventDefault();
+
+  const fields = Array.from(
+    e.currentTarget.querySelectorAll<HTMLElement>(
+      'input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
+    )
+  ).filter((field) => field.tabIndex !== -1);
+
+  const currentIndex = fields.indexOf(target);
+
+  if (currentIndex === -1) return;
+
+  const direction = e.key === "ArrowUp" ? -1 : 1;
+  const nextField = fields[currentIndex + direction];
+
+  nextField?.focus();
+};
+
   const inputClass =
     "w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed text-sm";
 
@@ -260,7 +296,7 @@ export default function AddEditAssignmentModal({
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 p-6" onKeyDown={handleKeyDown}>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {/* Device */}
                 <div className="sm:col-span-2">
