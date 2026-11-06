@@ -124,7 +124,10 @@ export default async function NetworkDevicesPage({
 prisma.device.findMany({
   where: {
     type: {
-      in: ["IMPRIMANTE", "POINT_ACCES"],
+      in: ["IMPRIMANTE", "POINT_ACCES","TRACEUR"],
+    },
+      networkDevice: {
+      is: null,
     },
   },
   select: {

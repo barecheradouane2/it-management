@@ -280,6 +280,7 @@ export default function AddEditDeviceModal({
                   <label className={labelClass}>Code SARPI</label>
                   <input
                     placeholder="Enter SARPI code"
+                    autoFocus
                     {...register("codeSarpi")}
                     className={inputClass}
                   />

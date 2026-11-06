@@ -309,6 +309,7 @@ export default function AddEditAssignmentModal({
                         value > 0 || "Please select a device",
                     })}
                     className={inputClass}
+                       autoFocus
                   >
                     <option value={0}>Select a device</option>
                     {availableDevices.map((device) => (

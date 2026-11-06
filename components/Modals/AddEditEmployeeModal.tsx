@@ -258,6 +258,7 @@ export default function AddEditEmployeeModal({
                   {...register("fullname", {
                     required: "Full name is required",
                   })}
+                      autoFocus
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                 />
 

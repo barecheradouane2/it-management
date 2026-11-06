@@ -262,6 +262,7 @@ export default function AddEditConsumptionModal({
                       validate: (v) => v > 0 || "Please select a valid device",
                     })}
                     className={inputClass}
+                        autoFocus
                   >
                     <option value={0}>-- Select item in stock --</option>
                     {devices.map((d) => (

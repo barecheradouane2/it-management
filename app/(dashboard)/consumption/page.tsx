@@ -23,12 +23,6 @@ type ConsumptionsPageProps = {
 };
 
 const typeOptions: DeviceType[] = [
-  "UNITE",
-  "ECRAN",
-  "ONDULEUR",
-  "IMPRIMANTE",
-  "LAPTOP",
-  "DATASHOW",
   "POINT_ACCES",
   "SWITCH",
   "HARD_DISK",
@@ -36,7 +30,7 @@ const typeOptions: DeviceType[] = [
   "TONER",
   "BATTERIE",
   "ADAPTATEUR_WIFI",
-  "HARD_DISK_EXTERN",
+  "HARD_DISK_EXTERN"
 ];
 
 const serviceOptions: Service[] = [
@@ -191,7 +185,10 @@ export default async function ConsumptionsPage({
     prisma.device.findMany({
       where: {
         qty: { gt: 0 },
-      },
+        type: {
+        in: typeOptions,
+         },
+       },
       select: {
         id: true,
         brand: true,

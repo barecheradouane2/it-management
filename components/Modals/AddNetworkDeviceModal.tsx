@@ -229,6 +229,7 @@ export default function AddEditNetworkDeviceModal({
                       setValueAs: (v) => (v === "" || v === "0" ? null : Number(v)),
                     })}
                     className={inputClass}
+                        autoFocus
                   >
                     <option value="">-- Aucun matériel lié (Standalone) --</option>
                     {devices.map((device) => (
